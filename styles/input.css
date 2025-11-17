@@ -1,0 +1,137 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Custom breakpoints */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 780px;
+  --breakpoint-lg: 1150px;
+
+  /* Semantic background colors */
+  --color-brand-primary: theme(colors.violet.600);
+  --color-brand-secondary: theme(colors.violet.700);
+  --color-brand-tertiary: theme(colors.violet.500);
+  --color-brand-muted: oklch(0.43 0.1066 294.85);
+  --color-neutral-primary: theme(colors.white);
+  --color-neutral-secondary: theme(colors.gray.50);
+
+  /* Semantic border colors */
+  --color-border-brand-primary: theme(colors.violet.600);
+  --color-border-neutral-primary: theme(colors.gray.200);
+  --color-border-neutral-secondary: theme(colors.gray.100);
+
+  /* Semantic text colors */
+  --color-text-neutral-primary: theme(colors.gray.900);
+  --color-text-neutral-secondary: theme(colors.gray.600);
+  --color-text-neutral-tertiary: theme(colors.gray.500);
+
+  /* Custom animations */
+  --animate-shimmer: shimmer 2s infinite;
+  --animate-pulse: pulse 2s infinite;
+
+  /* Transition properties */
+  --transition-size: width, height;
+  --transition-position: left, top, height, right;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Custom utility classes */
+@utility link-underline {
+  text-decoration: none;
+  cursor: pointer;
+  background: linear-gradient(90deg, var(--color-brand-tertiary) 50%, theme(colors.violet.300) 50%) no-repeat 100% 100% / 200% 2px;
+  transition: background-position .3s, color .6s;
+}
+
+@utility link-underline-dark {
+  background-image: linear-gradient(90deg, var(--color-brand-tertiary) 50%, var(--color-brand-muted) 50%);
+}
+
+@utility link-hover-slide {
+  &:hover {
+    background-position: 0% 100%;
+  }
+}
+
+/* Semantic text color utilities */
+@utility text-content {
+  color: var(--color-text-neutral-primary);
+}
+
+@utility text-content-secondary {
+  color: var(--color-text-neutral-secondary);
+}
+
+@utility text-accent {
+  color: var(--color-brand-tertiary);
+}
+
+@utility text-accent-hover {
+  color: var(--color-brand-tertiary);
+}
+
+@utility text-accent-muted {
+  color: var(--color-brand-muted);
+}
+
+@layer components {
+  .link-animated {
+    @apply link-underline link-hover-slide text-accent hover:text-accent-hover md:text-content;
+
+    @variant dark {
+      @apply link-underline-dark md:text-accent;
+    }
+  }
+}
+
+@utility pulse {
+  animation: pulse 2s infinite;
+}
+
+@utility page-section {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@utility section-heading {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+/* Base styles for light and dark mode */
+html {
+  color: theme(colors.gray.900);
+  background-color: theme(colors.gray.100);
+}
+
+html.dark {
+  color: theme(colors.gray.100);
+  background-color: theme(colors.zinc.900);
+}
+
+/* Fade in animation classes */
+.fadeIn {
+  opacity: 0;
+  transition: all 1s;
+}
+
+.fadeIn.show {
+  opacity: 1;
+  transition: all 1s;
+}
