@@ -1,0 +1,27 @@
+{
+  "serviceName": "superhero-ttrpg-container-service",
+  "containers": {
+    "superhero-ttrpg": {
+      "image": "IMAGE_PLACEHOLDER",
+      "environment": {
+        "NODE_ENV": "production",
+        "DATABASE_PATH": "/app/data/superhero-ttrpg.db"
+      },
+      "ports": {
+        "3000": "HTTP"
+      }
+    }
+  },
+  "publicEndpoint": {
+    "containerName": "superhero-ttrpg",
+    "containerPort": 3000,
+    "healthCheck": {
+      "path": "/api/health",
+      "intervalSeconds": 30,
+      "timeoutSeconds": 10,
+      "successCodes": "200",
+      "healthyThreshold": 2,
+      "unhealthyThreshold": 3
+    }
+  }
+}
