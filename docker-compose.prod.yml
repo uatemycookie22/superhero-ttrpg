@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  app:
+    env_file:
+      - .env.production  # Reference to file (not the file itself)
+    volumes:
+      - /data/sqlite/app-data:/app/data  # Production path
+    restart: always
+    network_mode: host  # Production network setting
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
