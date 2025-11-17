@@ -2,12 +2,13 @@ version: '3.8'
 
 services:
   app:
+    image: 814155132173.dkr.ecr.us-east-1.amazonaws.com/superhero-ttrpg-ecr-repo:latest
     env_file:
-      - .env.production  # Reference to file (not the file itself)
+      - .env.production
     volumes:
-      - /data/sqlite/app-data:/app/data  # Production path
+      - /data/sqlite/app-data:/app/data
     restart: always
-    network_mode: host  # Production network setting
+    network_mode: host
     logging:
       driver: "json-file"
       options:
