@@ -18,10 +18,24 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
+    // Only connect if WebSocket URL is configured
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL;
+    
+    if (!wsUrl) {
+      console.log('[WebSocket] Skipping connection - NEXT_PUBLIC_WS_URL not configured');
+      return;
+    }
+
+    console.log('[WebSocket] Connecting to:', wsUrl);
+
     // Initialize Socket.IO client
-    const socketInstance = io(process.env.NEXT_PUBLIC_WS_URL || '', {
+    const socketInstance = io(wsUrl, {
       path: '/api/websocket',
       transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 10000,
     });
 
     socketInstance.on('connect', () => {
@@ -35,7 +49,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     });
 
     socketInstance.on('connect_error', (error) => {
-      console.error('[WebSocket] Connection error:', error);
+      // Silently fail - server not ready yet
+      console.warn('[WebSocket] Connection failed - WebSocket server not running');
     });
 
     setSocket(socketInstance);
