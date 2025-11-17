@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Providers } from './providers';
 import { ThemeToggle } from '@/components/ThemeToggle/ThemeToggle';
-import '../styles/input.css';
+import '../../styles/input.css';
 
 export const metadata: Metadata = {
   title: 'Superhero TTRPG',

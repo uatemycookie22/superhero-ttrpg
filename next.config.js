@@ -2,9 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
-  experimental: {
-    serverComponentsExternalPackages: ['better-sqlite3'],
-  },
+  serverExternalPackages: ['better-sqlite3'],
   sassOptions: {
     includePaths: ['./styles']
   },
