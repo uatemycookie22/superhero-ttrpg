@@ -27,10 +27,19 @@ export default function HomePage() {
         <h3 className="text-2xl font-semibold mb-6">Credits</h3>
         <div className="space-y-3 text-lg">
           <p>
-            <span className="font-semibold">Creator:</span> Rashard Green
+            <span className="font-semibold">Creative Director:</span> Rashard G
           </p>
           <p>
-            <span className="font-semibold">Web Developer:</span> Lysander Hernandez
+            <span className="font-semibold">CEO:</span> Nicolas M
+          </p>
+          <p>
+            <span className="font-semibold">Web Developer & Artist:</span> Liz H
+          </p>
+          <p>
+            <span className="font-semibold">Game Designer:</span> Max
+          </p>
+          <p>
+            <span className="font-semibold">Web Developer:</span> Lysander H
           </p>
         </div>
       </div>
