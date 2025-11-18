@@ -14,9 +14,9 @@ export default function HomePage() {
       <div className="mb-12">
         <Link
           href="/character-sheet"
-          className="inline-block p-6 rounded-lg border-2 border-gray-200 dark:border-zinc-800 hover:border-violet-500 dark:hover:border-violet-500 transition-colors"
+          className="inline-block p-6 rounded-lg border-2 border-gray-200 dark:border-zinc-800 hover:border-violet-500 dark:hover:border-violet-500 transition-colors group"
         >
-          <h3 className="text-2xl font-semibold mb-2">Character Sheet</h3>
+          <h3 className="text-2xl font-semibold mb-2 group-hover:text-violet-500 transition-colors">Character Sheet</h3>
           <p className="text-gray-600 dark:text-gray-400">
             Create and manage your superhero character
           </p>
