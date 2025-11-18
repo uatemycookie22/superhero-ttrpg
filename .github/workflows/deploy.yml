@@ -94,7 +94,7 @@ jobs:
           sleep 10
           
           echo "🔍 Testing HTTPS endpoint..."
-          curl -f -m 10 "https://dnd.lysanderh.com/api/health"
+          curl -f -m 10 "https://callingallheroes.net/api/health"
           
           echo "✅ Deployment verified!"
 
@@ -108,6 +108,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Image**: \`${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**🌐 Live**: https://dnd.lysanderh.com" >> $GITHUB_STEP_SUMMARY
+          echo "**🌐 Live**: https://callingallheroes.net/" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✅ Zero-downtime deployment complete!" >> $GITHUB_STEP_SUMMARY
