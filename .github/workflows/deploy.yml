@@ -14,7 +14,7 @@ env:
   ECR_REPOSITORY: superhero-ttrpg-ecr-repo
   IMAGE_TAG: ${{ github.sha }}
   INSTANCE_IP: 18.215.116.116
-  AWS_ROLE_ARN: arn:aws:iam::814155132173:role/DndCicdStack-CicdGitHubActionsRole9B0F19E0-sXFluM2Vltzd
+  AWS_ROLE_ARN: arn:aws:iam::814155132173:role/DndCicdStack-CicdGitHubActionsRole9B0F19E0-rjXM0Q7Hd3HA
 
 jobs:
   build-and-deploy:
