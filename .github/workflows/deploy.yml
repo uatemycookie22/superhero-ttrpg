@@ -66,8 +66,9 @@ jobs:
             set -e
             cd /opt/dnd-app
             
-            echo "📥 Pulling latest code..."
-            git pull origin main
+            echo "📥 Fetching latest docker-compose.prod.yml from GitHub..."
+            curl -sSL -o docker-compose.prod.yml \
+              https://raw.githubusercontent.com/uatemycookie22/superhero-ttrpg/${{ github.sha }}/docker-compose.prod.yml
             
             echo "🔐 Logging in to ECR..."
             aws ecr get-login-password --region us-east-1 | \
