@@ -25,6 +25,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Ensure public directory exists (Next.js may not create it if empty)
+RUN mkdir -p public
+
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
 # Uncomment the following line in case you want to disable telemetry during the build.
@@ -57,7 +60,9 @@ RUN adduser --system --uid 1001 nextjs
 # Create data directory for SQLite database with proper permissions
 RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
 
-COPY --from=builder /app/public ./public
+# Ensure public directory exists in builder output
+# Next.js may not create it if empty
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
