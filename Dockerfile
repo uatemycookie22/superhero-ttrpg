@@ -69,6 +69,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Copy drizzle config and schema for migrations
+COPY --from=builder --chown=nextjs:nodejs /app/drizzle.config.ts ./drizzle.config.ts
+COPY --from=builder --chown=nextjs:nodejs /app/src/db ./src/db
+
 USER nextjs
 
 EXPOSE 3000
