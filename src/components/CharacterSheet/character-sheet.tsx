@@ -43,16 +43,34 @@ const IconLabelInput = ({ id, label, ...rest }: Omit<SheetInputProps, 'label'> &
     </div>
 </>)
 
-export default function CharacterSheet() {
-    const [characterCreated, setCharacterCreated] = useState(false)
-    const [characterId, setCharacterId] = useState<string>()
+type CharacterSheetProps = {
+    onCharacterCreate?: (character: EditableCharacter) => void,
+    onCharacterChange?: (character: EditableCharacter) => void,
+    existingCharacter?: Character,
+}
+export default function CharacterSheet(props: CharacterSheetProps) {
+    const [characterCreated, setCharacterCreated] = useState(!!props.existingCharacter)
+    const [characterId, setCharacterId] = useState<string | undefined>(props.existingCharacter?.id)
     const [character, setCharacter] = useState<EditableCharacter>({
         name: '',
         attributes: {},
+        ...props.existingCharacter,
     })
 
+    const [origin, setOrigin] = useState('');
+
+    useEffect(() => {
+        // This code runs only on the client side after the component mounts
+        if (typeof window !== 'undefined') {
+        setOrigin(window.location.origin);
+        }
+    }, []); // Empty dependency array ensures this runs once after initial render
+
+
     function handleChange(field: keyof EditableCharacter, value: any) {
-        setCharacter(prev => ({ ...prev, [field]: value }))
+        const updated = { ...character, [field]: value };
+        setCharacter(updated);
+        props.onCharacterChange?.(updated);
     }
 
     // Create character on first input
@@ -77,6 +95,7 @@ export default function CharacterSheet() {
             })
 
             setCharacterId(newCharacter.id)
+            props.onCharacterChange?.(newCharacter)
         }
         if (character.name) {
             setCharacterCreated(true)
@@ -102,6 +121,9 @@ export default function CharacterSheet() {
     }
 
     return (<>
+         <div>
+            { origin && characterId && <p>Save this link to revisit this character: {`${origin}/character-sheet/${characterId}`}</p>}
+        </div>
         <div id="character-sheet-grid" className="grid grid-cols-3 gap-4">
             <div id="hero-identity" className="border-2 p-4 max-w-48 col-span-2">
                 <SheetInput id="alter_ego" label="Alter ego" name="Alter ego" type="text" />
