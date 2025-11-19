@@ -37,7 +37,7 @@ export const characters = sqliteTable('characters', {
     resources?: Record<string, { current: number; max: number }>;
     equipment?: Array<{ name: string; description: string }>;
     abilities?: Array<{ name: string; description: string; level?: number }>;
-    [key: string]: any;
+    [key: string]: unknown;
   }>(),
   createdBy: text('created_by').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' })
@@ -67,7 +67,7 @@ export const sessions = sqliteTable('sessions', {
     currentTurn?: string;
     turnOrder?: string[];
     notes?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   }>(),
 });
 

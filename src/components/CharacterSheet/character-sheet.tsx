@@ -67,7 +67,7 @@ export default function CharacterSheet(props: CharacterSheetProps) {
     }, []); // Empty dependency array ensures this runs once after initial render
 
 
-    function handleChange(field: keyof EditableCharacter, value: any) {
+    function handleChange(field: keyof EditableCharacter, value: EditableCharacter[typeof field]) {
         const updated = { ...character, [field]: value };
         setCharacter(updated);
         props.onCharacterChange?.(updated);

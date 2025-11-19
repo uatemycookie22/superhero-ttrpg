@@ -7,7 +7,7 @@ interface SessionState {
   currentTurn?: string;
   turnOrder?: string[];
   notes?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface UseSessionOptions {
@@ -52,7 +52,7 @@ export function useSession({
     });
 
     // Listen for character updates
-    socket.on('character:updated', (data: any) => {
+    socket.on('character:updated', (data: { characterId: string; updates: Record<string, unknown> }) => {
       console.log('[Session] Character updated:', data);
     });
 
@@ -70,7 +70,7 @@ export function useSession({
     socket.emit('session:update-state', { sessionId, state });
   };
 
-  const updateCharacter = (characterId: string, updates: any) => {
+  const updateCharacter = (characterId: string, updates: Record<string, unknown>) => {
     if (!socket) return;
     socket.emit('character:update', { sessionId, characterId, updates });
   };

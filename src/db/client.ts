@@ -6,16 +6,28 @@ import path from 'path';
 // Use process.cwd() for reliable path resolution in Next.js
 const dbPath = process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'superhero-ttrpg.db');
 
-console.log('[Database] Initializing SQLite database at:', dbPath);
+let sqliteInstance: Database.Database | null = null;
+let dbInstance: ReturnType<typeof drizzle<typeof schema>> | null = null;
 
-// Create SQLite connection
-const sqlite = new Database(dbPath);
+function initDb() {
+  if (!sqliteInstance) {
+    console.log('[Database] Initializing SQLite database at:', dbPath);
+    sqliteInstance = new Database(dbPath);
+    sqliteInstance.pragma('journal_mode = WAL');
+    dbInstance = drizzle(sqliteInstance, { schema });
+  }
+  return { sqlite: sqliteInstance!, db: dbInstance! };
+}
 
-// Enable WAL mode for better concurrent access
-sqlite.pragma('journal_mode = WAL');
+// Lazy-loading proxies - only initialize when actually accessed
+export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
+  get(target, prop) {
+    return initDb().db[prop as keyof typeof target];
+  }
+}) as ReturnType<typeof drizzle<typeof schema>>;
 
-// Create Drizzle instance with schema
-export const db = drizzle(sqlite, { schema });
-
-// Export the raw sqlite instance for advanced use cases
-export { sqlite };
+export const sqlite = new Proxy({} as Database.Database, {
+  get(target, prop) {
+    return initDb().sqlite[prop as keyof Database.Database];
+  }
+}) as Database.Database;

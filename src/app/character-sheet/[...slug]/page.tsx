@@ -8,8 +8,6 @@ type CharacterSheetProps = {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 export default async function CharacterSheetPage({ params }: CharacterSheetProps) {
-  // TODO: Pass params promise to character sheet content component
-
   const { slug } = await params;
   const [characterId] = slug;
   const character = await getCharacter(characterId)
