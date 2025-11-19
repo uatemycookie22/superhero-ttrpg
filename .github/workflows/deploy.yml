@@ -78,6 +78,13 @@ jobs:
             echo "📥 Pulling latest image from ECR..."
             docker compose -f docker-compose.prod.yml pull
             
+            echo "🗄️ Running database migrations..."
+            docker run --rm \
+              -v /data/sqlite/app-data:/app/data \
+              -e DATABASE_PATH=/app/data/superhero-ttrpg.db \
+              814155132173.dkr.ecr.us-east-1.amazonaws.com/superhero-ttrpg-ecr-repo:latest \
+              sh -c "cd /app && npx drizzle-kit push --force"
+            
             echo "🔄 Restarting containers (zero-downtime)..."
             docker compose -f docker-compose.prod.yml up -d --force-recreate
             
