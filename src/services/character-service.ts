@@ -1,3 +1,4 @@
+'use server'
 import { db } from '@/db/client';
 import { characters, type Character, type NewCharacter } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';

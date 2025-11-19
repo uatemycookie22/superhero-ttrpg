@@ -1,3 +1,4 @@
+'use server'
 import { db } from '@/db/client';
 import { sessions, type Session, type NewSession } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';

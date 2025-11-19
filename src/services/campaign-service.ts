@@ -1,3 +1,4 @@
+'use server'
 import { db } from '@/db/client';
 import { campaigns, type Campaign, type NewCampaign } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -10,8 +11,9 @@ export async function createCampaign(data: {
   name: string;
   description?: string;
   createdBy: string;
+  overrideId?: string,
 }): Promise<Campaign> {
-  const id = nanoid();
+  const id = data.overrideId ?? nanoid();
   
   const [campaign] = await db
     .insert(campaigns)
