@@ -1,8 +1,8 @@
 'use client';
 import { Character } from "@/db/schema";
 import { createCampaign, getCampaign } from "@/services/campaign-service";
-import { createCharacter, getCharacter, updateCharacter } from "@/services/character-service";
-import { Skull, User, Hand, CloudLightning, ThumbsUp, Star } from "lucide-react"
+import { createCharacter, getCharacter, touchCharacter, updateCharacter } from "@/services/character-service";
+import { Skull, User, Hand, CloudLightning, ThumbsUp, Star, Check } from "lucide-react"
 import { ChangeEvent, ComponentProps, JSX, useEffect, useState } from "react"
 import { useDebounce } from 'use-debounce';
 
@@ -56,14 +56,23 @@ export default function CharacterSheet(props: CharacterSheetProps) {
         attributes: {},
         ...props.existingCharacter,
     })
+    const [copied, setCopied] = useState(false)
+    const [isInitialMount, setIsInitialMount] = useState(true)
 
     const [origin, setOrigin] = useState('');
 
     useEffect(() => {
         // This code runs only on the client side after the component mounts
         if (typeof window !== 'undefined') {
-        setOrigin(window.location.origin);
+            setOrigin(window.location.origin);
         }
+
+        if (props.existingCharacter) {
+            touchCharacter(props.existingCharacter.id)
+        }
+        
+        // Mark initial mount as complete
+        setIsInitialMount(false)
     }, []); // Empty dependency array ensures this runs once after initial render
 
 
@@ -105,6 +114,9 @@ export default function CharacterSheet(props: CharacterSheetProps) {
 
     const [debouncedCharacter] = useDebounce(character, 1000)
     useEffect(() => {
+        // Skip sync on initial mount
+        if (isInitialMount) return;
+        
         async function syncCharacter() {
             if (!characterId) return;
 
@@ -120,28 +132,63 @@ export default function CharacterSheet(props: CharacterSheetProps) {
         handleChange('name', e.target.value)
     }
 
+    function handleAttributeChange(key: string, value: string | number | number[]) {
+        handleChange('attributes', { ...character.attributes, [key]: value })
+    }
+
+    function copyLink() {
+        if (origin && characterId) {
+            navigator.clipboard.writeText(`${origin}/character-sheet/${characterId}`)
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        }
+    }
+
     return (<>
-         <div>
-            { origin && characterId && <p>Save this link to revisit this character: {`${origin}/character-sheet/${characterId}`}</p>}
+         <div id="copy-link" className="mb-4">
+            { origin && characterId && (
+                <p className="flex items-center gap-2 text-xs">
+                    Save this link to revisit this character: {`${origin}/character-sheet/${characterId}`}
+                    <button onClick={copyLink} className="px-1.5 py-0.5 text-xs bg-violet-600 text-white rounded hover:bg-violet-700 flex items-center gap-1">
+                        {copied ? <Check className="w-3 h-3 text-green-400" /> : 'Copy'}
+                    </button>
+                </p>
+            )}
         </div>
         <div id="character-sheet-grid" className="grid grid-cols-3 gap-4">
             <div id="hero-identity" className="border-2 p-4 max-w-48 col-span-2">
-                <SheetInput id="alter_ego" label="Alter ego" name="Alter ego" type="text" />
+                <SheetInput id="alter_ego" label="Alter ego" name="Alter ego" type="text" 
+                    value={character.attributes?.alterEgo as string || ''} 
+                    onChange={(e) => handleAttributeChange('alterEgo', e.target.value)} />
                 <SheetInput id="hero_name" label="Hero name" name="Hero name" type="text" onChange={handleNameChange} value={character.name} />
             </div>
 
             <div id="hero-level" className="border-2 p-2 sm:p-4 w-full col-start-3">
-                <CamperStatInput id="level" label="Level" name="Level" type="number" />
+                <CamperStatInput id="level" label="Level" name="Level" type="number" 
+                    value={character.attributes?.level as number || 0} 
+                    onChange={(e) => handleAttributeChange('level', Number(e.target.value))} />
             </div>
 
 
             <div id="hero-camper-stats" className="border-2 p-4 col-span-3 sm:col-span-1 grid grid-cols-2 sm:grid-cols-1 gap-6 ">
-                <CamperStatInput id="charm" label="Charm" name="Charm" type="number" />
-                <CamperStatInput id="agility" label="Agility" name="Agility" type="number" />
-                <CamperStatInput id="might" label="Might" name="Might" type="number" />
-                <CamperStatInput id="power" label="Power" name="Power" type="number" />
-                <CamperStatInput id="endurance" label="Endurance" name="Endurance" type="number" />
-                <CamperStatInput id="resolve" label="Resolve" name="Resolve" type="number" />
+                <CamperStatInput id="charm" label="Charm" name="Charm" type="number" 
+                    value={character.attributes?.charm as number || 0} 
+                    onChange={(e) => handleAttributeChange('charm', Number(e.target.value))} />
+                <CamperStatInput id="agility" label="Agility" name="Agility" type="number" 
+                    value={character.attributes?.agility as number || 0} 
+                    onChange={(e) => handleAttributeChange('agility', Number(e.target.value))} />
+                <CamperStatInput id="might" label="Might" name="Might" type="number" 
+                    value={character.attributes?.might as number || 0} 
+                    onChange={(e) => handleAttributeChange('might', Number(e.target.value))} />
+                <CamperStatInput id="power" label="Power" name="Power" type="number" 
+                    value={character.attributes?.power as number || 0} 
+                    onChange={(e) => handleAttributeChange('power', Number(e.target.value))} />
+                <CamperStatInput id="endurance" label="Endurance" name="Endurance" type="number" 
+                    value={character.attributes?.endurance as number || 0} 
+                    onChange={(e) => handleAttributeChange('endurance', Number(e.target.value))} />
+                <CamperStatInput id="resolve" label="Resolve" name="Resolve" type="number" 
+                    value={character.attributes?.resolve as number || 0} 
+                    onChange={(e) => handleAttributeChange('resolve', Number(e.target.value))} />
             </div>
 
             <div id="hero-camper-prowess" className="grid border-2 p-0 gap-0 col-span-3 grid-cols-subgrid">
@@ -151,15 +198,21 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                             <p>Weakness</p>
                             <Skull className="w-12 h-12" />
                         </div>
-                        <textarea name="weakness" className="bg-gray-50 resize-y grow min-h-32 text-black rounded p-2 text-sm" placeholder="List weaknesses..." />
+                        <textarea name="weakness" className="bg-gray-50 resize-y grow min-h-32 text-black rounded p-2 text-sm" placeholder="List weaknesses..." 
+                            value={character.attributes?.weakness as string || ''} 
+                            onChange={(e) => handleAttributeChange('weakness', e.target.value)} />
                     </div>
                 </ProwessBox>
 
                 <ProwessBox>
                     <div className="w-full flex flex-col gap-4">
                         <p>Reflex/Strike</p>
-                        <IconLabelInput label={<User />} />
-                        <IconLabelInput label={<Hand />} />
+                        <IconLabelInput label={<User />} 
+                            value={character.attributes?.reflex as number || 0} 
+                            onChange={(e) => handleAttributeChange('reflex', Number(e.target.value))} />
+                        <IconLabelInput label={<Hand />} 
+                            value={character.attributes?.strike as number || 0} 
+                            onChange={(e) => handleAttributeChange('strike', Number(e.target.value))} />
                     </div>
                 </ProwessBox>
 
@@ -168,12 +221,20 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                         <p>Fortune</p>
                         <div className="flex flex-wrap gap-2">
                             {Array.from({ length: 5 }).map((_, i) => (
-                                <input key={i} type="checkbox" className="w-6 h-6" />
+                                <input key={i} type="checkbox" className="w-6 h-6" 
+                                    checked={!!(character.attributes?.fortune as number[] || [])[i]} 
+                                    onChange={(e) => {
+                                        const fortune = [...(character.attributes?.fortune as number[] || [0,0,0,0,0])];
+                                        fortune[i] = e.target.checked ? 1 : 0;
+                                        handleAttributeChange('fortune', fortune);
+                                    }} />
                             ))}
                         </div>
 
                         <p>Notes</p>
-                        <textarea name="notes" className="bg-gray-50 resize-y grow min-h-32 text-black rounded p-2 text-sm" placeholder="Session notes..." />
+                        <textarea name="notes" className="bg-gray-50 resize-y grow min-h-32 text-black rounded p-2 text-sm" placeholder="Session notes..." 
+                            value={character.attributes?.notes as string || ''} 
+                            onChange={(e) => handleAttributeChange('notes', e.target.value)} />
                     </div>
                 </ProwessBox>
 
@@ -183,14 +244,18 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                             <p>Powers</p>
                             <CloudLightning className="w-12 h-12" />
                         </div>
-                        <textarea name="powers" className="bg-gray-50 resize-y grow min-h-32 text-black rounded p-2 text-sm" placeholder="List powers and abilities..." />
+                        <textarea name="powers" className="bg-gray-50 resize-y grow min-h-32 text-black rounded p-2 text-sm" placeholder="List powers and abilities..." 
+                            value={character.attributes?.powers as string || ''} 
+                            onChange={(e) => handleAttributeChange('powers', e.target.value)} />
                     </div>
                 </ProwessBox>
 
                 <ProwessBox>
                     <div className="w-full flex flex-col gap-2">
                         <p>Attacks</p>
-                        <textarea name="attacks" className="bg-gray-50 resize-y grow min-h-32 text-black rounded p-2 text-sm" placeholder="List attacks and damage..." />
+                        <textarea name="attacks" className="bg-gray-50 resize-y grow min-h-32 text-black rounded p-2 text-sm" placeholder="List attacks and damage..." 
+                            value={character.attributes?.attacks as string || ''} 
+                            onChange={(e) => handleAttributeChange('attacks', e.target.value)} />
                     </div>
                 </ProwessBox>
 

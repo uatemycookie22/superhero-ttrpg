@@ -3,6 +3,7 @@ import { db } from '@/db/client';
 import { sessions, type Session, type NewSession } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
+import { now, toDate } from '@/lib/temporal';
 
 /**
  * Create a new game session
@@ -75,7 +76,7 @@ export async function endSession(id: string): Promise<Session | null> {
     .update(sessions)
     .set({
       isActive: false,
-      endedAt: new Date(),
+      endedAt: toDate(now()),
     })
     .where(eq(sessions.id, id))
     .returning();

@@ -46,6 +46,7 @@ export const characters = sqliteTable('characters', {
   updatedAt: integer('updated_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),
+  lastAccessedAt: integer('last_accessed_at', { mode: 'timestamp' }),
 });
 
 /**

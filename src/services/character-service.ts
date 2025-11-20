@@ -1,8 +1,9 @@
 'use server'
 import { db } from '@/db/client';
 import { characters, type Character, type NewCharacter } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, lt, sql } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
+import { now, toDate, daysAgo } from '@/lib/temporal';
 
 /**
  * Create a new character
@@ -20,6 +21,7 @@ export async function createCharacter(data: {
     .values({
       id,
       ...data,
+      lastAccessedAt: toDate(now()),
     })
     .returning();
   
@@ -77,12 +79,22 @@ export async function updateCharacter(
     .update(characters)
     .set({
       ...data,
-      updatedAt: new Date(),
+      updatedAt: toDate(now()),
     })
     .where(eq(characters.id, id))
     .returning();
   
   return updated || null;
+}
+
+/**
+ * Touch character's lastAccessedAt timestamp
+ */
+export async function touchCharacter(id: string): Promise<void> {
+  await db
+    .update(characters)
+    .set({ lastAccessedAt: toDate(now()) })
+    .where(eq(characters.id, id));
 }
 
 /**
@@ -94,4 +106,15 @@ export async function deleteCharacter(id: string): Promise<boolean> {
     .where(eq(characters.id, id));
   
   return result.changes > 0;
+}
+
+/**
+ * Delete characters not accessed in 30 days
+ */
+export async function deleteStaleCharacters(): Promise<number> {
+  const result = await db
+    .delete(characters)
+    .where(lt(characters.lastAccessedAt, toDate(daysAgo(30))));
+  
+  return result.changes;
 }

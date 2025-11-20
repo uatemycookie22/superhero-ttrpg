@@ -3,6 +3,7 @@ import { db } from '@/db/client';
 import { campaigns, type Campaign, type NewCampaign } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
+import { now, toDate } from '@/lib/temporal';
 
 /**
  * Create a new campaign
@@ -58,7 +59,7 @@ export async function updateCampaign(
     .update(campaigns)
     .set({
       ...data,
-      updatedAt: new Date(),
+      updatedAt: toDate(now()),
     })
     .where(eq(campaigns.id, id))
     .returning();
