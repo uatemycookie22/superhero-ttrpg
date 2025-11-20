@@ -119,6 +119,19 @@ export default function CharacterSheet(props: CharacterSheetProps) {
     }, [character])
 
     const [debouncedCharacter] = useDebounce(character, 1000)
+    
+    // Save to localStorage when characterId is set
+    useEffect(() => {
+        if (!characterId) return;
+        
+        const saved = localStorage.getItem('savedCharacterIds');
+        const ids = saved ? JSON.parse(saved) : [];
+        if (!ids.includes(characterId)) {
+            ids.push(characterId);
+            localStorage.setItem('savedCharacterIds', JSON.stringify(ids));
+        }
+    }, [characterId]);
+    
     useEffect(() => {
         // Skip sync on initial mount
         if (isInitialMount) return;

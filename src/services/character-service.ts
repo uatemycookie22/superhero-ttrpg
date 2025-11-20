@@ -1,7 +1,7 @@
 'use server'
 import { db } from '@/db/client';
 import { characters, type Character, type NewCharacter } from '@/db/schema';
-import { eq, and, lt, sql } from 'drizzle-orm';
+import { eq, and, lt, sql, inArray } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { now, toDate, daysAgo } from '@/lib/temporal';
 
@@ -50,6 +50,19 @@ export async function getCharacter(id: string): Promise<Character | null> {
     .limit(1);
   
   return character || null;
+}
+
+/**
+ * Get multiple characters by IDs
+ */
+export async function getCharacters(ids: string[]): Promise<Character[]> {
+  if (ids.length === 0) return [];
+  
+  return await db
+    .select()
+    .from(characters)
+    .where(inArray(characters.id, ids))
+    .all();
 }
 
 /**
