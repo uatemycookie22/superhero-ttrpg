@@ -4,7 +4,7 @@ import { ThemeToggle } from '@/components/ThemeToggle/ThemeToggle';
 import '../../styles/input.css';
 
 export const metadata: Metadata = {
-  title: 'Superhero TTRPG',
+  title: 'Calling All Heroes',
   description: 'A collaborative tabletop RPG campaign manager for superhero adventures',
 };
 
@@ -20,7 +20,7 @@ export default function RootLayout({
           <header className="border-b border-gray-200 dark:border-zinc-800">
             <nav className="container mx-auto px-4 py-4 flex items-center justify-between">
               <h1 className="text-2xl font-bold text-violet-600 dark:text-violet-400">
-                Superhero TTRPG
+                Calling All Heroes
               </h1>
               <ThemeToggle />
             </nav>

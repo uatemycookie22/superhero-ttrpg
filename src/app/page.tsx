@@ -14,7 +14,7 @@ export default function HomePage() {
             <div className="text-6xl mb-4 text-center">🚧</div>
             <h3 className="text-xl font-semibold mb-2 text-center">Under Construction</h3>
             <p className="text-gray-600 dark:text-gray-400 text-center">
-              Campaign management coming soon
+              Play with friends 🫂
             </p>
           </div>
         </div>
@@ -32,7 +32,7 @@ export default function HomePage() {
               + Create New Character
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              Start building your superhero
+              Be your favorite superhero 🦸‍♀️
             </p>
           </Link>
 
