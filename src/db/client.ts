@@ -13,7 +13,15 @@ function initDb() {
   if (!sqliteInstance) {
     console.log('[Database] Initializing SQLite database at:', dbPath);
     sqliteInstance = new Database(dbPath);
+    
+    // Performance and reliability optimizations
     sqliteInstance.pragma('journal_mode = WAL');
+    sqliteInstance.pragma('busy_timeout = 5000');
+    sqliteInstance.pragma('synchronous = NORMAL');
+    sqliteInstance.pragma('cache_size = -20000');
+    sqliteInstance.pragma('foreign_keys = true');
+    sqliteInstance.pragma('temp_store = memory');
+    
     dbInstance = drizzle(sqliteInstance, { schema });
   }
   return { sqlite: sqliteInstance!, db: dbInstance! };
