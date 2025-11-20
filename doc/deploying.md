@@ -14,6 +14,171 @@ The application is deployed to **AWS Lightsail** using **Docker containers**. Gi
 
 ---
 
+## Infrastructure
+
+### Current Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         Internet                             │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+              ┌──────────────────────┐
+              │   Route 53 (DNS)     │
+              │ callingallheroes.net │
+              └──────────┬───────────┘
+                         │
+                         ▼
+              ┌──────────────────────┐
+              │  Lightsail Instance  │
+              │   18.215.116.116     │
+              │  ┌────────────────┐  │
+              │  │  Caddy Proxy   │  │
+              │  │  (HTTPS/SSL)   │  │
+              │  └────────┬───────┘  │
+              │           │          │
+              │  ┌────────▼───────┐  │
+              │  │ Docker Container│ │
+              │  │   Port 3000    │  │
+              │  └────────────────┘  │
+              │           │          │
+              │  ┌────────▼───────┐  │
+              │  │ Block Storage  │  │
+              │  │  /data/sqlite  │  │
+              │  │  (Database)    │  │
+              │  └────────────────┘  │
+              └──────────────────────┘
+```
+
+### DNS (Route 53)
+
+**Domain**: `callingallheroes.net`
+
+**Records:**
+- **A Record**: `callingallheroes.net` → `18.215.116.116`
+- **CNAME**: `www.callingallheroes.net` → `callingallheroes.net`
+
+**Configuration:**
+- Managed in AWS Route 53
+- Points to Lightsail instance static IP
+- TTL: 300 seconds (5 minutes)
+
+### Lightsail Instance
+
+**Instance Details:**
+- **Type**: Virtual Private Server (VPS)
+- **IP**: `18.215.116.116` (static)
+- **OS**: Ubuntu 22.04 LTS
+- **Region**: `us-east-1` (N. Virginia)
+- **Plan**: 2 GB RAM, 1 vCPU, 60 GB SSD
+
+**Installed Software:**
+- Docker Engine
+- Docker Compose
+- AWS CLI (for ECR authentication)
+- Caddy (reverse proxy)
+
+**Networking:**
+- Port 80 (HTTP) → Redirects to HTTPS
+- Port 443 (HTTPS) → Caddy → Docker container (3000)
+- Port 22 (SSH) → GitHub Actions deployment
+
+### Block Storage
+
+**Volume Details:**
+- **Size**: 8 GB
+- **Mount Point**: `/data/sqlite`
+- **Purpose**: Persistent SQLite database storage
+- **Attached To**: Lightsail instance
+
+**Database Location:**
+```
+Host: /data/sqlite/app-data/superhero-ttrpg.db
+Container: /app/data/superhero-ttrpg.db (via volume mount)
+```
+
+**Benefits:**
+- Data persists across container restarts
+- Survives instance reboots
+- Can be detached and attached to new instances
+- Separate from instance root volume (easier backups)
+
+> [!IMPORTANT]
+> Block storage must be mounted before starting the Docker container. Unmounting while container is running will cause database errors.
+
+### Container Registry (ECR)
+
+**Repository**: `814155132173.dkr.ecr.us-east-1.amazonaws.com/superhero-ttrpg-ecr-repo`
+
+**Image Tags:**
+- `latest` - Most recent deployment
+- `<commit-sha>` - Specific commit version (for rollbacks)
+
+**Authentication:**
+```bash
+aws ecr get-login-password --region us-east-1 | \
+  docker login --username AWS --password-stdin 814155132173.dkr.ecr.us-east-1.amazonaws.com
+```
+
+### Reverse Proxy (Caddy)
+
+**Configuration** (`/etc/caddy/Caddyfile`):
+```
+callingallheroes.net {
+    reverse_proxy localhost:3000
+    encode gzip
+    
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000;"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+    }
+}
+```
+
+**Features:**
+- Automatic HTTPS with Let's Encrypt
+- HTTP → HTTPS redirect
+- Gzip compression
+- Security headers
+
+### Future Enhancements
+
+**Planned Infrastructure Changes:**
+
+1. **Amazon S3**
+   - Store character images/assets
+   - Reduce container storage needs
+   - Enable CDN distribution
+
+2. **CloudFront CDN**
+   - Cache static assets globally
+   - Reduce latency for international users
+   - Offload traffic from Lightsail
+
+3. **Managed Database**
+   - Amazon RDS (PostgreSQL) or Aurora Serverless
+   - Better scalability and backups
+   - Multi-AZ redundancy
+   - Automated failover
+
+4. **Load Balancer**
+   - Application Load Balancer (ALB)
+   - Multiple Lightsail instances
+   - Auto-scaling based on traffic
+
+5. **Monitoring**
+   - CloudWatch metrics and alarms
+   - Application performance monitoring
+   - Database query analytics
+
+> [!NOTE]
+> Current architecture is optimized for low cost and simplicity. Future enhancements will improve scalability and reliability as user base grows.
+
+---
+
 ## Production Configuration
 
 ### Environment Detection

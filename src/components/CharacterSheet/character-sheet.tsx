@@ -2,9 +2,10 @@
 import { Character } from "@/db/schema";
 import { createCampaign, getCampaign } from "@/services/campaign-service";
 import { createCharacter, getCharacter, touchCharacter, updateCharacter } from "@/services/character-service";
-import { Skull, User, Hand, CloudLightning, ThumbsUp, Star, Check } from "lucide-react"
+import { Skull, User, Hand, CloudLightning, ThumbsUp, Star, Check, Loader2 } from "lucide-react"
 import { ChangeEvent, ComponentProps, JSX, useEffect, useState } from "react"
 import { useDebounce } from 'use-debounce';
+import StatRadarChart from "@/components/StatRadarChart";
 
 
 type EditableCharacter = Pick<Character, 'name' | 'attributes'>
@@ -47,6 +48,7 @@ type CharacterSheetProps = {
     onCharacterCreate?: (character: EditableCharacter) => void,
     onCharacterChange?: (character: EditableCharacter) => void,
     existingCharacter?: Character,
+    lastAccessed?: string,
 }
 export default function CharacterSheet(props: CharacterSheetProps) {
     const [characterCreated, setCharacterCreated] = useState(!!props.existingCharacter)
@@ -58,6 +60,8 @@ export default function CharacterSheet(props: CharacterSheetProps) {
     })
     const [copied, setCopied] = useState(false)
     const [isInitialMount, setIsInitialMount] = useState(true)
+    const [isSaving, setIsSaving] = useState(false)
+    const [justSaved, setJustSaved] = useState(false)
 
     const [origin, setOrigin] = useState('');
 
@@ -80,6 +84,8 @@ export default function CharacterSheet(props: CharacterSheetProps) {
         const updated = { ...character, [field]: value };
         setCharacter(updated);
         props.onCharacterChange?.(updated);
+        setIsSaving(true);
+        setJustSaved(false);
     }
 
     // Create character on first input
@@ -124,6 +130,9 @@ export default function CharacterSheet(props: CharacterSheetProps) {
             if (!currentCharacter) return;
 
             await updateCharacter(characterId, debouncedCharacter)
+            setIsSaving(false);
+            setJustSaved(true);
+            setTimeout(() => setJustSaved(false), 2000);
         }
         syncCharacter()
     }, [debouncedCharacter, characterId])
@@ -152,9 +161,20 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                     <button onClick={copyLink} className="px-1.5 py-0.5 text-xs bg-violet-600 text-white rounded hover:bg-violet-700 flex items-center gap-1">
                         {copied ? <Check className="w-3 h-3 text-green-400" /> : 'Copy'}
                     </button>
+                    {isSaving && (
+                        <span className="text-gray-500 flex items-center gap-1 ml-2">
+                            <Loader2 className="w-3 h-3 animate-spin" /> Saving...
+                        </span>
+                    )}
+                    {justSaved && (
+                        <span className="text-green-600 flex items-center gap-1 ml-2">
+                            <Check className="w-3 h-3" /> Saved!
+                        </span>
+                    )}
                 </p>
             )}
         </div>
+
         <div id="character-sheet-grid" className="grid grid-cols-3 gap-4">
             <div id="hero-identity" className="border-2 p-4 max-w-48 col-span-2">
                 <SheetInput id="alter_ego" label="Alter ego" name="Alter ego" type="text" 
@@ -164,31 +184,43 @@ export default function CharacterSheet(props: CharacterSheetProps) {
             </div>
 
             <div id="hero-level" className="border-2 p-2 sm:p-4 w-full col-start-3">
-                <CamperStatInput id="level" label="Level" name="Level" type="number" 
+                <CamperStatInput id="level" label="Level" name="Level" type="number" min={0} max={20}
                     value={character.attributes?.level as number || 0} 
                     onChange={(e) => handleAttributeChange('level', Number(e.target.value))} />
             </div>
 
 
             <div id="hero-camper-stats" className="border-2 p-4 col-span-3 sm:col-span-1 grid grid-cols-2 sm:grid-cols-1 gap-6 ">
-                <CamperStatInput id="charm" label="Charm" name="Charm" type="number" 
+                <CamperStatInput id="charm" label="Charm" name="Charm" type="number" min={0} max={10}
                     value={character.attributes?.charm as number || 0} 
                     onChange={(e) => handleAttributeChange('charm', Number(e.target.value))} />
-                <CamperStatInput id="agility" label="Agility" name="Agility" type="number" 
+                <CamperStatInput id="agility" label="Agility" name="Agility" type="number" min={0} max={10}
                     value={character.attributes?.agility as number || 0} 
                     onChange={(e) => handleAttributeChange('agility', Number(e.target.value))} />
-                <CamperStatInput id="might" label="Might" name="Might" type="number" 
+                <CamperStatInput id="might" label="Might" name="Might" type="number" min={0} max={10}
                     value={character.attributes?.might as number || 0} 
                     onChange={(e) => handleAttributeChange('might', Number(e.target.value))} />
-                <CamperStatInput id="power" label="Power" name="Power" type="number" 
+                <CamperStatInput id="power" label="Power" name="Power" type="number" min={0} max={10}
                     value={character.attributes?.power as number || 0} 
                     onChange={(e) => handleAttributeChange('power', Number(e.target.value))} />
-                <CamperStatInput id="endurance" label="Endurance" name="Endurance" type="number" 
+                <CamperStatInput id="endurance" label="Endurance" name="Endurance" type="number" min={0} max={10}
                     value={character.attributes?.endurance as number || 0} 
                     onChange={(e) => handleAttributeChange('endurance', Number(e.target.value))} />
-                <CamperStatInput id="resolve" label="Resolve" name="Resolve" type="number" 
+                <CamperStatInput id="resolve" label="Resolve" name="Resolve" type="number" min={0} max={10}
                     value={character.attributes?.resolve as number || 0} 
                     onChange={(e) => handleAttributeChange('resolve', Number(e.target.value))} />
+            </div>
+
+            <div id="stats-radar" className="border-2 p-4 col-span-3 sm:col-span-2">
+                <h2 className="text-lg font-bold mb-2">Stats Overview</h2>
+                <StatRadarChart stats={[
+                    { stat: 'Charm', value: ((character.attributes?.charm as number) || 0) + 1, max: 10 },
+                    { stat: 'Agility', value: ((character.attributes?.agility as number) || 0) + 1, max: 10 },
+                    { stat: 'Might', value: ((character.attributes?.might as number) || 0) + 1, max: 10 },
+                    { stat: 'Power', value: ((character.attributes?.power as number) || 0) + 1, max: 10 },
+                    { stat: 'Endurance', value: ((character.attributes?.endurance as number) || 0) + 1, max: 10 },
+                    { stat: 'Resolve', value: ((character.attributes?.resolve as number) || 0) + 1, max: 10 },
+                ]} />
             </div>
 
             <div id="hero-camper-prowess" className="grid border-2 p-0 gap-0 col-span-3 grid-cols-subgrid">
