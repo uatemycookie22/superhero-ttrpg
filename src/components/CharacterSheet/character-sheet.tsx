@@ -213,7 +213,7 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                 <CamperStatInput id="might" label="Might" name="Might" type="number" min={0} max={10}
                     value={character.attributes?.might as number || 0} 
                     onChange={(e) => handleAttributeChange('might', Number(e.target.value))} />
-                <CamperStatInput id="power" label="Power" name="Power" type="number" min={0} max={10}
+                <CamperStatInput id="prowess" label="Prowess" name="Prowess" type="number" min={0} max={10}
                     value={character.attributes?.power as number || 0} 
                     onChange={(e) => handleAttributeChange('power', Number(e.target.value))} />
                 <CamperStatInput id="endurance" label="Endurance" name="Endurance" type="number" min={0} max={10}
@@ -230,7 +230,7 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                     { stat: 'Charm', value: ((character.attributes?.charm as number) || 0) + 1, max: 10 },
                     { stat: 'Agility', value: ((character.attributes?.agility as number) || 0) + 1, max: 10 },
                     { stat: 'Might', value: ((character.attributes?.might as number) || 0) + 1, max: 10 },
-                    { stat: 'Power', value: ((character.attributes?.power as number) || 0) + 1, max: 10 },
+                    { stat: 'Prowess', value: ((character.attributes?.power as number) || 0) + 1, max: 10 },
                     { stat: 'Endurance', value: ((character.attributes?.endurance as number) || 0) + 1, max: 10 },
                     { stat: 'Resolve', value: ((character.attributes?.resolve as number) || 0) + 1, max: 10 },
                 ]} />
