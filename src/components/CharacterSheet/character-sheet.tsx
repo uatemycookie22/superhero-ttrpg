@@ -9,6 +9,7 @@ import StatRadarChart from "@/components/StatRadarChart";
 import Drawer from "@/components/Drawer";
 import WeaknessBox from "./WeaknessBox";
 import PowerBox from "./PowerBox";
+import { calculateTotalPoints, getStatWithProficiency, characterStatsSchema } from "@/lib/character-validation";
 
 
 
@@ -28,10 +29,30 @@ function SheetInput({ label, id, className, value, onChange, ...rest }: SheetInp
     </>)
 }
 
-const CamperStatInput = ({ id, label, ...rest }: SheetInputProps) => (<>
-    <div className="flex flex-row flex-wrap gap-2 items-center justify-between">
-        <label htmlFor={id} className="">{label}</label>
-        <input className="rounded text-neutral-900 max-w-16" {...rest} />
+const CamperStatInput = ({ id, label, isProficient, onProficiencyToggle, ...rest }: SheetInputProps & { 
+  isProficient?: boolean; 
+  onProficiencyToggle?: () => void;
+}) => (<>
+    <div className="flex flex-row gap-2 items-center justify-between">
+        <div className="flex items-center gap-2 min-w-0">
+            {onProficiencyToggle && (
+                <button
+                    type="button"
+                    onClick={onProficiencyToggle}
+                    className={`w-6 h-6 flex-shrink-0 rounded border-2 flex items-center justify-center ${
+                        isProficient ? 'bg-brand-primary border-brand-primary' : 'border-gray-400'
+                    }`}
+                    title="Toggle proficiency (+3 bonus)"
+                >
+                    {isProficient && <Star className="w-4 h-4 text-white" fill="currentColor" />}
+                </button>
+            )}
+            <label htmlFor={id} className="truncate">
+                <span className="md:hidden">{label.charAt(0)}</span>
+                <span className="hidden md:inline">{label}</span>
+            </label>
+        </div>
+        <input className="rounded text-neutral-900 max-w-16 flex-shrink-0" {...rest} />
     </div>
 </>)
 
@@ -59,7 +80,9 @@ export default function CharacterSheet(props: CharacterSheetProps) {
     const [characterId, setCharacterId] = useState<string | undefined>(props.existingCharacter?.id)
     const [character, setCharacter] = useState<EditableCharacter>({
         name: '',
-        attributes: {},
+        attributes: {
+            proficiencies: [],
+        },
         ...props.existingCharacter,
     })
     const [copied, setCopied] = useState(false)
@@ -68,6 +91,27 @@ export default function CharacterSheet(props: CharacterSheetProps) {
     const [justSaved, setJustSaved] = useState(false)
 
     const [origin, setOrigin] = useState('');
+
+    const proficiencies = (character.attributes?.proficiencies as ('charm' | 'agility' | 'might' | 'power' | 'endurance' | 'resolve')[]) || [];
+    const totalPoints = calculateTotalPoints({
+        charm: character.attributes?.charm as number || 0,
+        agility: character.attributes?.agility as number || 0,
+        might: character.attributes?.might as number || 0,
+        power: character.attributes?.power as number || 0,
+        endurance: character.attributes?.endurance as number || 0,
+        resolve: character.attributes?.resolve as number || 0,
+    });
+    const pointsRemaining = 30 - totalPoints;
+
+    function toggleProficiency(stat: 'charm' | 'agility' | 'might' | 'power' | 'endurance' | 'resolve') {
+        const current = proficiencies;
+        const newProf = current.includes(stat)
+            ? current.filter(s => s !== stat)
+            : current.length < 2
+                ? [...current, stat]
+                : current;
+        handleAttributeChange('proficiencies', newProf);
+    }
 
     useEffect(() => {
         // This code runs only on the client side after the component mounts
@@ -146,6 +190,24 @@ export default function CharacterSheet(props: CharacterSheetProps) {
             const currentCharacter = await getCharacter(characterId)
             if (!currentCharacter) return;
 
+            // Validate stats before saving
+            const statsToValidate = {
+                charm: debouncedCharacter.attributes?.charm as number || 0,
+                agility: debouncedCharacter.attributes?.agility as number || 0,
+                might: debouncedCharacter.attributes?.might as number || 0,
+                power: debouncedCharacter.attributes?.power as number || 0,
+                endurance: debouncedCharacter.attributes?.endurance as number || 0,
+                resolve: debouncedCharacter.attributes?.resolve as number || 0,
+                proficiencies: debouncedCharacter.attributes?.proficiencies as string[],
+            };
+
+            const validation = characterStatsSchema.safeParse(statsToValidate);
+            if (!validation.success) {
+                console.error('Validation failed:', validation.error);
+                setIsSaving(false);
+                return;
+            }
+
             await updateCharacter(characterId, debouncedCharacter)
             setIsSaving(false);
             setJustSaved(true);
@@ -159,6 +221,25 @@ export default function CharacterSheet(props: CharacterSheetProps) {
     }
 
     function handleAttributeChange(key: string, value: string | number | number[] | {} ) {
+        // Validate stat changes
+        if (['charm', 'agility', 'might', 'power', 'endurance', 'resolve'].includes(key)) {
+            const numValue = value as number;
+            // Enforce max 10 per stat
+            if (numValue > 10) return;
+            
+            // Check if total would exceed 30
+            const newTotal = calculateTotalPoints({
+                charm: key === 'charm' ? numValue : (character.attributes?.charm as number || 0),
+                agility: key === 'agility' ? numValue : (character.attributes?.agility as number || 0),
+                might: key === 'might' ? numValue : (character.attributes?.might as number || 0),
+                power: key === 'power' ? numValue : (character.attributes?.power as number || 0),
+                endurance: key === 'endurance' ? numValue : (character.attributes?.endurance as number || 0),
+                resolve: key === 'resolve' ? numValue : (character.attributes?.resolve as number || 0),
+            });
+            
+            if (newTotal > 30) return;
+        }
+        
         handleChange('attributes', { ...character.attributes, [key]: value })
     }
 
@@ -207,36 +288,54 @@ export default function CharacterSheet(props: CharacterSheetProps) {
             </div>
 
 
-            <div id="hero-camper-stats" className="border-2 p-4 col-span-3 sm:col-span-1 grid grid-cols-2 sm:grid-cols-1 gap-6 ">
+            <div id="hero-camper-stats" className="border-2 p-4 col-span-3 sm:col-span-1 grid grid-cols-1 gap-6 ">
+                <div className="flex justify-between items-center pb-2 border-b">
+                    <span className="font-semibold">Points Remaining:</span>
+                    <span className={`text-lg font-bold ${pointsRemaining < 0 ? 'text-error-primary' : ''}`}>
+                        {pointsRemaining} / 30
+                    </span>
+                </div>
                 <CamperStatInput id="charm" label="Charm" name="Charm" type="number" min={0} max={10}
                     value={character.attributes?.charm as number || 0} 
-                    onChange={(e) => handleAttributeChange('charm', Number(e.target.value))} />
+                    onChange={(e) => handleAttributeChange('charm', Number(e.target.value))}
+                    isProficient={proficiencies.includes('charm')}
+                    onProficiencyToggle={() => toggleProficiency('charm')} />
                 <CamperStatInput id="agility" label="Agility" name="Agility" type="number" min={0} max={10}
                     value={character.attributes?.agility as number || 0} 
-                    onChange={(e) => handleAttributeChange('agility', Number(e.target.value))} />
+                    onChange={(e) => handleAttributeChange('agility', Number(e.target.value))}
+                    isProficient={proficiencies.includes('agility')}
+                    onProficiencyToggle={() => toggleProficiency('agility')} />
                 <CamperStatInput id="might" label="Might" name="Might" type="number" min={0} max={10}
                     value={character.attributes?.might as number || 0} 
-                    onChange={(e) => handleAttributeChange('might', Number(e.target.value))} />
+                    onChange={(e) => handleAttributeChange('might', Number(e.target.value))}
+                    isProficient={proficiencies.includes('might')}
+                    onProficiencyToggle={() => toggleProficiency('might')} />
                 <CamperStatInput id="prowess" label="Prowess" name="Prowess" type="number" min={0} max={10}
                     value={character.attributes?.power as number || 0} 
-                    onChange={(e) => handleAttributeChange('power', Number(e.target.value))} />
+                    onChange={(e) => handleAttributeChange('power', Number(e.target.value))}
+                    isProficient={proficiencies.includes('power')}
+                    onProficiencyToggle={() => toggleProficiency('power')} />
                 <CamperStatInput id="endurance" label="Endurance" name="Endurance" type="number" min={0} max={10}
                     value={character.attributes?.endurance as number || 0} 
-                    onChange={(e) => handleAttributeChange('endurance', Number(e.target.value))} />
+                    onChange={(e) => handleAttributeChange('endurance', Number(e.target.value))}
+                    isProficient={proficiencies.includes('endurance')}
+                    onProficiencyToggle={() => toggleProficiency('endurance')} />
                 <CamperStatInput id="resolve" label="Resolve" name="Resolve" type="number" min={0} max={10}
                     value={character.attributes?.resolve as number || 0} 
-                    onChange={(e) => handleAttributeChange('resolve', Number(e.target.value))} />
+                    onChange={(e) => handleAttributeChange('resolve', Number(e.target.value))}
+                    isProficient={proficiencies.includes('resolve')}
+                    onProficiencyToggle={() => toggleProficiency('resolve')} />
             </div>
 
             <div id="stats-radar" className="border-2 p-4 col-span-3 sm:col-span-2">
                 <h2 className="text-lg font-bold mb-2">Stats Overview</h2>
                 <StatRadarChart stats={[
-                    { stat: 'Charm', value: ((character.attributes?.charm as number) || 0) + 1, max: 10 },
-                    { stat: 'Agility', value: ((character.attributes?.agility as number) || 0) + 1, max: 10 },
-                    { stat: 'Might', value: ((character.attributes?.might as number) || 0) + 1, max: 10 },
-                    { stat: 'Prowess', value: ((character.attributes?.power as number) || 0) + 1, max: 10 },
-                    { stat: 'Endurance', value: ((character.attributes?.endurance as number) || 0) + 1, max: 10 },
-                    { stat: 'Resolve', value: ((character.attributes?.resolve as number) || 0) + 1, max: 10 },
+                    { stat: 'Charm', value: getStatWithProficiency('charm', (character.attributes?.charm as number) || 0, proficiencies) + 1, max: 13 },
+                    { stat: 'Agility', value: getStatWithProficiency('agility', (character.attributes?.agility as number) || 0, proficiencies) + 1, max: 13 },
+                    { stat: 'Might', value: getStatWithProficiency('might', (character.attributes?.might as number) || 0, proficiencies) + 1, max: 13 },
+                    { stat: 'Prowess', value: getStatWithProficiency('power', (character.attributes?.power as number) || 0, proficiencies) + 1, max: 13 },
+                    { stat: 'Endurance', value: getStatWithProficiency('endurance', (character.attributes?.endurance as number) || 0, proficiencies) + 1, max: 13 },
+                    { stat: 'Resolve', value: getStatWithProficiency('resolve', (character.attributes?.resolve as number) || 0, proficiencies) + 1, max: 13 },
                 ]} />
             </div>
 
