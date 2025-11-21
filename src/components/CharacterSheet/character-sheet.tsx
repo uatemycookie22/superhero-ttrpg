@@ -6,6 +6,9 @@ import { Skull, User, Hand, CloudLightning, ThumbsUp, Star, Check, Loader2 } fro
 import { ChangeEvent, ComponentProps, JSX, useEffect, useState } from "react"
 import { useDebounce } from 'use-debounce';
 import StatRadarChart from "@/components/StatRadarChart";
+import Drawer from "@/components/Drawer";
+import WeaknessBox from "./WeaknessBox";
+
 
 
 type EditableCharacter = Pick<Character, 'name' | 'attributes'>
@@ -238,20 +241,15 @@ export default function CharacterSheet(props: CharacterSheetProps) {
 
             <div id="hero-camper-prowess" className="grid border-2 p-0 gap-0 col-span-3 grid-cols-subgrid">
                 <ProwessBox>
-                    <div className="w-full flex flex-col gap-2">
-                        <div className="flex justify-between">
-                            <p>Weakness</p>
-                            <Skull className="w-12 h-12" />
-                        </div>
-                        <textarea name="weakness" className="bg-gray-50 resize-y grow min-h-32 text-black rounded p-2 text-sm" placeholder="List weaknesses..." 
-                            value={character.attributes?.weakness as string || ''} 
-                            onChange={(e) => handleAttributeChange('weakness', e.target.value)} />
-                    </div>
+                    <WeaknessBox 
+                        initialWeaknesses={(character.attributes?.weaknesses as any[]) || []}
+                        onWeaknessesChange={(weaknesses) => handleAttributeChange('weaknesses', weaknesses)}
+                    />
                 </ProwessBox>
 
                 <ProwessBox>
                     <div className="w-full flex flex-col gap-4">
-                        <p>Reflex/Strike</p>
+                        <h4>Reflex/Strike</h4>
                         <IconLabelInput label={<User />} 
                             value={character.attributes?.reflex as number || 0} 
                             onChange={(e) => handleAttributeChange('reflex', Number(e.target.value))} />
