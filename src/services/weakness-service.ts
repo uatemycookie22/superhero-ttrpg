@@ -1,32 +1,35 @@
 'use server';
-import { db } from '@/db/client';
-import { weaknesses, type Weakness, type NewWeakness } from '@/db/schema';
-import { nanoid } from 'nanoid';
+import { google } from 'googleapis';
+import { cacheLife } from 'next/cache';
+
+type Weakness = {
+  id: string;
+  name: string;
+  description: string;
+};
 
 export async function getAllWeaknesses(): Promise<Weakness[]> {
-  return db.select().from(weaknesses).all();
-}
+  'use cache';
+  cacheLife('minutes');
 
-export async function createWeakness(data: Omit<NewWeakness, 'id'>): Promise<Weakness> {
-  const weakness: NewWeakness = {
-    id: nanoid(),
-    ...data,
-  };
+  const auth = new google.auth.GoogleAuth({
+    credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY || '{}'),
+    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+  });
+
+  const sheets = google.sheets({ version: 'v4', auth });
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: process.env.GOOGLE_SHEET_ID,
+    range: 'Weaknesses!A2:C',
+  });
+
+  const rows = response.data.values || [];
+  const weaknesses = rows.map((row, index) => ({
+    id: row[0] || `weakness-${index}`,
+    name: row[1] || '',
+    description: row[2] || '',
+  }));
   
-  await db.insert(weaknesses).values(weakness);
-  return weakness as Weakness;
-}
-
-export async function seedWeaknesses() {
-  await db.delete(weaknesses);
-
-  const defaultWeaknesses = [
-    { name: "Green Glowing Rock", description: "Your body shuts down in proximity of a rock that glows green." },
-    { name: "Bug Spray", description: "If your powers are based off bugs, you're going to have a bad time against this convenient weapon. Works on spiders, ants, beetles." },
-    { name: "Lactose Intolerance", description: "Yes, this has incapacitated superheroes in battles before. It's surprisingly effective!" },
-  ];
-
-  for (const weakness of defaultWeaknesses) {
-    await createWeakness(weakness);
-  }
+  console.log('[Weaknesses] Fetched from Google Sheets:', weaknesses.length);
+  return weaknesses;
 }

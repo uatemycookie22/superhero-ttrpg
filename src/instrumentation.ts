@@ -3,16 +3,11 @@ export async function register() {
     const { db } = await import('./db/client');
     const { migrate } = await import('drizzle-orm/better-sqlite3/migrator');
     const { deleteStaleCharacters } = await import('./services/character-service');
-    const { seedWeaknesses } = await import('./services/weakness-service');
     const path = await import('path');
     
     console.log('[Instrumentation] Running migrations...');
     migrate(db, { migrationsFolder: path.join(process.cwd(), 'src/db/migrations') });
     console.log('[Instrumentation] Migrations complete');
-    
-    console.log('[Instrumentation] Seeding weaknesses...');
-    await seedWeaknesses();
-    console.log('[Instrumentation] Weaknesses seeded');
     
     console.log('[Instrumentation] Cleaning up stale characters...');
     const deleted = await deleteStaleCharacters();

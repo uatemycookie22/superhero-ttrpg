@@ -6,6 +6,7 @@ import Drawer from '@/components/Drawer';
 import CollapsibleListItem from '@/components/CollapsibleListItem';
 import { getAllWeaknesses } from '@/services/weakness-service';
 import type { Weakness } from '@/db/schema';
+import { useQuery } from '@tanstack/react-query';
 
 interface WeaknessBoxProps {
   initialWeaknesses: Weakness[];
@@ -16,18 +17,8 @@ export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: W
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedWeaknesses, setSelectedWeaknesses] = useState<Weakness[]>(initialWeaknesses);
   const [searchQuery, setSearchQuery] = useState('');
-  const [weaknesses, setWeaknesses] = useState<Weakness[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (isDrawerOpen && weaknesses.length === 0) {
-      setIsLoading(true);
-      getAllWeaknesses().then(data => {
-        setWeaknesses(data);
-        setIsLoading(false);
-      });
-    }
-  }, [isDrawerOpen, weaknesses.length]);
+  const { data: weaknesses, isPending } = useQuery({ queryKey: ['weaknesses'], queryFn: getAllWeaknesses, enabled: isDrawerOpen })
 
   function addWeakness(weakness: Weakness) {
     if (!selectedWeaknesses.find(w => w.name === weakness.name)) {
@@ -43,6 +34,9 @@ export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: W
     onWeaknessesChange(updated);
   }
 
+  const selectedWeaknessesDetails = weaknesses
+      ?.filter((weakness) => selectedWeaknesses.find((selectedWeakness) => selectedWeakness.name === weakness.name));
+
   return (
     <>
       <div className="w-full flex flex-col gap-2">
@@ -50,7 +44,7 @@ export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: W
           <p>Weakness</p>
           <Skull className="w-12 h-12" />
         </div>
-        <button 
+        <button
           onClick={() => setIsDrawerOpen(true)}
           className="px-4 py-2 bg-brand-primary hover:bg-brand-secondary text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -63,28 +57,40 @@ export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: W
 
       <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}>
         <h2 className="text-xl font-bold mb-4">Manage Weaknesses</h2>
-        
+
         <div className="mb-6">
           <h3 className="font-semibold mb-2">Applied Weaknesses</h3>
           <div className="space-y-2">
-            {selectedWeaknesses.length === 0 ? (
-              <p className="text-sm text-gray-500">No weaknesses applied</p>
+            
+
+            {isPending ? (
+              <>
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="p-3 bg-bg-neutral-secondary rounded animate-pulse">
+                    <div className="h-4 bg-bg-neutral-tertiary rounded w-1/3 mb-2"></div>
+                    <div className="h-3 bg-bg-neutral-tertiary rounded w-2/3"></div>
+                  </div>
+                ))}
+              </>
             ) : (
-              selectedWeaknesses.map(weakness => (
-                <CollapsibleListItem
-                  key={weakness.name}
-                  title={weakness.name}
-                  description={weakness.description}
-                  actionButton={
-                    <button
-                      onClick={() => removeWeakness(weakness)}
-                      className="px-2 py-1 text-sm bg-error-primary hover:bg-error-secondary text-white rounded"
-                    >
-                      Remove
-                    </button>
-                  }
-                />
-              ))
+              selectedWeaknessesDetails
+                ?.map(weakness => {
+                  return (
+                    <CollapsibleListItem
+                      key={weakness.name}
+                      title={weakness.name}
+                      description={weakness.description}
+                      actionButton={
+                        <button
+                          onClick={() => removeWeakness(weakness)}
+                          className="px-2 py-1 text-sm bg-error-primary hover:bg-error-secondary text-white rounded"
+                        >
+                          Remove
+                        </button>
+                      }
+                    />
+                  );
+                })
             )}
           </div>
         </div>
@@ -99,7 +105,7 @@ export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: W
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           <div className="space-y-2">
-            {isLoading ? (
+            {isPending ? (
               <>
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="p-3 bg-bg-neutral-secondary rounded animate-pulse">
@@ -110,7 +116,7 @@ export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: W
               </>
             ) : (
               weaknesses
-                .filter(w => 
+                ?.filter(w =>
                   w.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                   w.description.toLowerCase().includes(searchQuery.toLowerCase())
                 )
