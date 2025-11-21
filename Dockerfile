@@ -33,13 +33,17 @@ RUN mkdir -p public
 # Uncomment the following line in case you want to disable telemetry during the build.
 # ENV NEXT_TELEMETRY_DISABLED=1
 
-# Use BuildKit secrets for AWS credentials (for future AWS service calls at build time)
+# Use BuildKit secrets for credentials (more secure - not stored in layers)
 RUN --mount=type=secret,id=aws_access_key_id \
     --mount=type=secret,id=aws_secret_access_key \
     --mount=type=secret,id=aws_session_token \
+    --mount=type=secret,id=google_sheet_id \
+    --mount=type=secret,id=google_service_account_key \
     export AWS_ACCESS_KEY_ID=$(cat /run/secrets/aws_access_key_id 2>/dev/null || echo "") && \
     export AWS_SECRET_ACCESS_KEY=$(cat /run/secrets/aws_secret_access_key 2>/dev/null || echo "") && \
     export AWS_SESSION_TOKEN=$(cat /run/secrets/aws_session_token 2>/dev/null || echo "") && \
+    export GOOGLE_SHEET_ID=$(cat /run/secrets/google_sheet_id 2>/dev/null || echo "") && \
+    export GOOGLE_SERVICE_ACCOUNT_KEY=$(cat /run/secrets/google_service_account_key 2>/dev/null || echo "") && \
     if [ -f yarn.lock ]; then yarn run build; \
     elif [ -f package-lock.json ]; then npm run build; \
     elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
