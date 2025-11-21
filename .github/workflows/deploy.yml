@@ -59,12 +59,27 @@ jobs:
       - name: Deploy to Instance
         env:
           ECR_IMAGE: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+          GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
         run: |
           echo "🚀 Deploying to ${{ env.INSTANCE_IP }}"
           
-          ssh -i ~/.ssh/deploy-key -o StrictHostKeyChecking=no ubuntu@${{ env.INSTANCE_IP }} << 'ENDSSH'
+          ssh -i ~/.ssh/deploy-key -o StrictHostKeyChecking=no ubuntu@${{ env.INSTANCE_IP }} \
+            "GOOGLE_SHEET_ID='${GOOGLE_SHEET_ID}' GOOGLE_SERVICE_ACCOUNT_KEY='${GOOGLE_SERVICE_ACCOUNT_KEY}' bash -s" << 'ENDSSH'
             set -e
             cd /opt/dnd-app
+            
+            echo "📝 Creating .env.production from GitHub secrets..."
+            cat > .env.production << EOF
+            NODE_ENV=production
+            DATABASE_PATH=/app/data/superhero-ttrpg.db
+            PORT=3000
+            S3_BUCKET_NAME=dndstoragestack-storagedndassetsbucketbcc49b40-jhgknrtou9ft
+            CLOUDFRONT_URL=https://d2p9tcbwktjnou.cloudfront.net
+            AWS_REGION=us-east-1
+            GOOGLE_SHEET_ID=${GOOGLE_SHEET_ID}
+            GOOGLE_SERVICE_ACCOUNT_KEY=${GOOGLE_SERVICE_ACCOUNT_KEY}
+            EOF
             
             echo "📥 Fetching latest docker-compose.prod.yml from GitHub..."
             curl -sSL -o docker-compose.prod.yml \
@@ -88,6 +103,7 @@ jobs:
             docker compose ps
           ENDSSH
 
+
       - name: Verify Deployment
         run: |
           echo "⏳ Waiting for app to be ready..."
@@ -95,6 +111,11 @@ jobs:
           
           echo "🔍 Testing HTTPS endpoint..."
           curl -f -m 10 "https://callingallheroes.net/api/health"
+          
+          echo "🔍 Testing Google Sheets integration..."
+          RESPONSE=$(curl -f -m 10 "https://callingallheroes.net/api/weaknesses")
+          COUNT=$(echo $RESPONSE | jq -r '.count')
+          echo "✅ Fetched $COUNT weaknesses from Google Sheets"
           
           echo "✅ Deployment verified!"
 
