@@ -8,6 +8,7 @@ import { useDebounce } from 'use-debounce';
 import StatRadarChart from "@/components/StatRadarChart";
 import Drawer from "@/components/Drawer";
 import WeaknessBox from "./WeaknessBox";
+import PowerBox from "./PowerBox";
 
 
 
@@ -282,15 +283,10 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                 </ProwessBox>
 
                 <ProwessBox>
-                    <div className="w-full flex flex-col gap-2">
-                        <div className="flex justify-between">
-                            <p>Powers</p>
-                            <CloudLightning className="w-12 h-12" />
-                        </div>
-                        <textarea name="powers" className="bg-gray-50 resize-y grow min-h-32 text-black rounded p-2 text-sm" placeholder="List powers and abilities..." 
-                            value={character.attributes?.powers as string || ''} 
-                            onChange={(e) => handleAttributeChange('powers', e.target.value)} />
-                    </div>
+                    <PowerBox
+                        initialPowers={character.attributes?.powers as any[] || []}
+                        onPowersChange={(powers) => handleAttributeChange('powers', powers)}
+                    />
                 </ProwessBox>
 
                 <ProwessBox>
