@@ -157,7 +157,7 @@ export default function CharacterSheet(props: CharacterSheetProps) {
         handleChange('name', e.target.value)
     }
 
-    function handleAttributeChange(key: string, value: string | number | number[]) {
+    function handleAttributeChange(key: string, value: string | number | number[] | {} ) {
         handleChange('attributes', { ...character.attributes, [key]: value })
     }
 
