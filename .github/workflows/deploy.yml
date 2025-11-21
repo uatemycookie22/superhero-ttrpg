@@ -62,30 +62,31 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy-key
           chmod 600 ~/.ssh/deploy-key
 
+      - name: Create .env.production
+        run: |
+          cat > .env.production << 'EOF'
+          NODE_ENV=production
+          DATABASE_PATH=/app/data/superhero-ttrpg.db
+          PORT=3000
+          S3_BUCKET_NAME=dndstoragestack-storagedndassetsbucketbcc49b40-jhgknrtou9ft
+          CLOUDFRONT_URL=https://d2p9tcbwktjnou.cloudfront.net
+          AWS_REGION=us-east-1
+          GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}
+          GOOGLE_SERVICE_ACCOUNT_KEY=${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+          EOF
+
       - name: Deploy to Instance
         env:
           ECR_IMAGE: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
-          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
-          GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
         run: |
           echo "🚀 Deploying to ${{ env.INSTANCE_IP }}"
           
-          ssh -i ~/.ssh/deploy-key -o StrictHostKeyChecking=no ubuntu@${{ env.INSTANCE_IP }} \
-            "GOOGLE_SHEET_ID='${GOOGLE_SHEET_ID}' GOOGLE_SERVICE_ACCOUNT_KEY='${GOOGLE_SERVICE_ACCOUNT_KEY}' bash -s" << 'ENDSSH'
+          echo "📤 Copying .env.production to server..."
+          scp -i ~/.ssh/deploy-key -o StrictHostKeyChecking=no .env.production ubuntu@${{ env.INSTANCE_IP }}:/opt/dnd-app/.env.production
+          
+          ssh -i ~/.ssh/deploy-key -o StrictHostKeyChecking=no ubuntu@${{ env.INSTANCE_IP }} << 'ENDSSH'
             set -e
             cd /opt/dnd-app
-            
-            echo "📝 Creating .env.production from GitHub secrets..."
-            cat > .env.production << EOF
-            NODE_ENV=production
-            DATABASE_PATH=/app/data/superhero-ttrpg.db
-            PORT=3000
-            S3_BUCKET_NAME=dndstoragestack-storagedndassetsbucketbcc49b40-jhgknrtou9ft
-            CLOUDFRONT_URL=https://d2p9tcbwktjnou.cloudfront.net
-            AWS_REGION=us-east-1
-            GOOGLE_SHEET_ID=${GOOGLE_SHEET_ID}
-            GOOGLE_SERVICE_ACCOUNT_KEY=${GOOGLE_SERVICE_ACCOUNT_KEY}
-            EOF
             
             echo "📥 Fetching latest docker-compose.prod.yml from GitHub..."
             curl -sSL -o docker-compose.prod.yml \
