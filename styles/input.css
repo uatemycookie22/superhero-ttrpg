@@ -7,28 +7,25 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
+  /* Semantic color aliases - 3 levels only */
+  --color-neutral-primary: theme(colors.gray.900);
+  --color-neutral-secondary: theme(colors.gray.600);
+  --color-neutral-tertiary: theme(colors.gray.400);
+  
+  --color-bg-neutral-primary: theme(colors.white);
+  --color-bg-neutral-secondary: theme(colors.gray.50);
+  --color-bg-neutral-tertiary: theme(colors.gray.200);
+  
+  --color-brand-primary: theme(colors.violet.600);
+  --color-brand-secondary: theme(colors.violet.700);
+  
+  --color-error-primary: theme(colors.red.600);
+  --color-error-secondary: theme(colors.red.800);
+  
   /* Custom breakpoints */
   --breakpoint-sm: 640px;
   --breakpoint-md: 780px;
   --breakpoint-lg: 1150px;
-
-  /* Semantic background colors */
-  --color-brand-primary: theme(colors.violet.600);
-  --color-brand-secondary: theme(colors.violet.700);
-  --color-brand-tertiary: theme(colors.violet.500);
-  --color-brand-muted: oklch(0.43 0.1066 294.85);
-  --color-neutral-primary: theme(colors.white);
-  --color-neutral-secondary: theme(colors.gray.50);
-
-  /* Semantic border colors */
-  --color-border-brand-primary: theme(colors.violet.600);
-  --color-border-neutral-primary: theme(colors.gray.200);
-  --color-border-neutral-secondary: theme(colors.gray.100);
-
-  /* Semantic text colors */
-  --color-text-neutral-primary: theme(colors.gray.900);
-  --color-text-neutral-secondary: theme(colors.gray.600);
-  --color-text-neutral-tertiary: theme(colors.gray.500);
 
   /* Custom animations */
   --animate-shimmer: shimmer 2s infinite;
@@ -54,12 +51,12 @@
 @utility link-underline {
   text-decoration: none;
   cursor: pointer;
-  background: linear-gradient(90deg, var(--color-brand-tertiary) 50%, theme(colors.violet.300) 50%) no-repeat 100% 100% / 200% 2px;
+  background: linear-gradient(90deg, theme(colors.violet.500) 50%, theme(colors.violet.300) 50%) no-repeat 100% 100% / 200% 2px;
   transition: background-position .3s, color .6s;
 }
 
 @utility link-underline-dark {
-  background-image: linear-gradient(90deg, var(--color-brand-tertiary) 50%, var(--color-brand-muted) 50%);
+  background-image: linear-gradient(90deg, theme(colors.violet.500) 50%, oklch(0.43 0.1066 294.85) 50%);
 }
 
 @utility link-hover-slide {
@@ -68,33 +65,12 @@
   }
 }
 
-/* Semantic text color utilities */
-@utility text-content {
-  color: var(--color-text-neutral-primary);
-}
-
-@utility text-content-secondary {
-  color: var(--color-text-neutral-secondary);
-}
-
-@utility text-accent {
-  color: var(--color-brand-tertiary);
-}
-
-@utility text-accent-hover {
-  color: var(--color-brand-tertiary);
-}
-
-@utility text-accent-muted {
-  color: var(--color-brand-muted);
-}
-
 @layer components {
   .link-animated {
-    @apply link-underline link-hover-slide text-accent hover:text-accent-hover md:text-content;
+    @apply link-underline link-hover-slide text-violet-600 hover:text-violet-600 md:text-gray-900;
 
     @variant dark {
-      @apply link-underline-dark md:text-accent;
+      @apply link-underline-dark md:text-violet-600;
     }
   }
 }
@@ -126,6 +102,14 @@ html {
 html.dark {
   color: theme(colors.gray.100);
   background-color: theme(colors.zinc.900);
+  
+  /* Dark mode color overrides */
+  --color-neutral-primary: theme(colors.white);
+  --color-neutral-secondary: theme(colors.gray.400);
+  --color-neutral-tertiary: theme(colors.gray.500);
+  --color-bg-neutral-primary: theme(colors.gray.900);
+  --color-bg-neutral-secondary: theme(colors.gray.800);
+  --color-bg-neutral-tertiary: theme(colors.gray.700);
 }
 
 /* Fade in animation classes */

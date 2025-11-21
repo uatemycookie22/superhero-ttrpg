@@ -4,22 +4,8 @@ import { useState, useEffect } from 'react';
 import { Skull } from 'lucide-react';
 import Drawer from '@/components/Drawer';
 import CollapsibleListItem from '@/components/CollapsibleListItem';
-
-type Weakness = { name: string; description: string };
-
-async function fetchWeaknesses(): Promise<Weakness[]> {
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return [
-    { name: "Kryptonite", description: "Exposure to green kryptonite radiation causes severe physical weakness, nausea, and pain. Prolonged exposure can be fatal. The mineral's unique radiation signature disrupts cellular functions and drains superhuman abilities, leaving the hero vulnerable and powerless." },
-    { name: "Fire", description: "Extreme heat and flames cause intense pain and can inflict serious burns. Fire-based attacks bypass normal defenses and can quickly overwhelm regenerative abilities. The psychological fear of fire can also impair judgment and tactical decision-making in combat situations." },
-    { name: "Water", description: "When fully submerged in water, powers significantly diminish or cease entirely. The hero experiences difficulty breathing and loses the ability to fly or use energy-based abilities. Extended submersion can lead to drowning despite enhanced physiology." },
-    { name: "Magic", description: "Mystical forces and enchanted weapons bypass all physical defenses. The hero has no innate resistance to magical attacks, curses, or illusions. Spells can affect the mind, body, or soul directly, making encounters with sorcerers particularly dangerous." },
-    { name: "Electricity", description: "High-voltage electrical shocks cause severe pain and temporary paralysis. Electrical attacks can disrupt neural pathways and interfere with the hero's ability to control their powers. Repeated exposure may cause lasting damage to the nervous system." },
-    { name: "Cold", description: "Freezing temperatures slow metabolism and reduce physical capabilities. Ice-based attacks can cause hypothermia and frostbite. In extreme cold, the hero's reaction time decreases significantly, and powers that rely on body heat become unreliable or fail completely." },
-    { name: "Sound", description: "High-frequency sonic attacks cause debilitating pain and disorientation. The hero's enhanced hearing makes them particularly vulnerable to sonic weapons. Intense sound waves can rupture eardrums, cause internal bleeding, and induce temporary or permanent deafness." },
-    { name: "Light", description: "Intense bright light or focused laser beams cause temporary or permanent blindness. Flash-bang effects can disorient and incapacitate. The hero's enhanced vision makes them more susceptible to light-based attacks, requiring special protection in bright environments." },
-  ];
-}
+import { getAllWeaknesses } from '@/services/weakness-service';
+import type { Weakness } from '@/db/schema';
 
 interface WeaknessBoxProps {
   initialWeaknesses: Weakness[];
@@ -28,20 +14,20 @@ interface WeaknessBoxProps {
 
 export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: WeaknessBoxProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [weaknesses, setWeaknesses] = useState<Weakness[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedWeaknesses, setSelectedWeaknesses] = useState<Weakness[]>(initialWeaknesses);
   const [searchQuery, setSearchQuery] = useState('');
+  const [weaknesses, setWeaknesses] = useState<Weakness[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (isDrawerOpen && weaknesses.length === 0) {
       setIsLoading(true);
-      fetchWeaknesses().then(data => {
+      getAllWeaknesses().then(data => {
         setWeaknesses(data);
         setIsLoading(false);
       });
     }
-  }, [isDrawerOpen]);
+  }, [isDrawerOpen, weaknesses.length]);
 
   function addWeakness(weakness: Weakness) {
     if (!selectedWeaknesses.find(w => w.name === weakness.name)) {
@@ -66,7 +52,7 @@ export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: W
         </div>
         <button 
           onClick={() => setIsDrawerOpen(true)}
-          className="px-4 py-2 bg-violet-600 text-white rounded hover:bg-violet-700"
+          className="px-4 py-2 bg-brand-primary hover:bg-brand-secondary text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Manage Weaknesses
         </button>
@@ -92,7 +78,7 @@ export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: W
                   actionButton={
                     <button
                       onClick={() => removeWeakness(weakness)}
-                      className="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                      className="px-2 py-1 text-sm bg-error-primary hover:bg-error-secondary text-white rounded"
                     >
                       Remove
                     </button>
@@ -108,7 +94,7 @@ export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: W
           <input
             type="text"
             placeholder="Search weaknesses..."
-            className="w-full px-4 py-2 mb-4 bg-gray-50 dark:bg-gray-800 text-black dark:text-white rounded"
+            className="w-full px-4 py-2 mb-4 bg-bg-neutral-secondary text-neutral-primary rounded"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -116,9 +102,9 @@ export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: W
             {isLoading ? (
               <>
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className="p-3 bg-gray-50 dark:bg-gray-800 rounded animate-pulse">
-                    <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/3 mb-2"></div>
-                    <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded w-2/3"></div>
+                  <div key={i} className="p-3 bg-bg-neutral-secondary rounded animate-pulse">
+                    <div className="h-4 bg-bg-neutral-tertiary rounded w-1/3 mb-2"></div>
+                    <div className="h-3 bg-bg-neutral-tertiary rounded w-2/3"></div>
                   </div>
                 ))}
               </>
@@ -139,7 +125,7 @@ export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: W
                         <button
                           onClick={() => addWeakness(weakness)}
                           disabled={isAdded}
-                          className="px-3 py-1 text-sm bg-violet-600 text-white rounded hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-3 py-1 text-sm bg-brand-primary hover:bg-brand-secondary text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Add
                         </button>

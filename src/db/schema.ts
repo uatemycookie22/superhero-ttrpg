@@ -72,6 +72,16 @@ export const sessions = sqliteTable('sessions', {
   }>(),
 });
 
+/**
+ * Weaknesses table
+ * Stores character weaknesses
+ */
+export const weaknesses = sqliteTable('weaknesses', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description').notNull(),
+});
+
 // Type exports for use in the application
 export type Campaign = typeof campaigns.$inferSelect;
 export type NewCampaign = typeof campaigns.$inferInsert;
@@ -79,3 +89,5 @@ export type Character = typeof characters.$inferSelect;
 export type NewCharacter = typeof characters.$inferInsert;
 export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
+export type Weakness = typeof weaknesses.$inferSelect;
+export type NewWeakness = typeof weaknesses.$inferInsert;

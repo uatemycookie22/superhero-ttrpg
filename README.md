@@ -72,7 +72,7 @@ The `attributes` field is a flexible JSON column that can store any character da
 ## Database Management
 
 ```bash
-# Generate new migration files
+# Generate new migration files.
 npm run db:generate
 
 # Push schema changes to database
@@ -84,6 +84,8 @@ npm run db:migrate
 # Open Drizzle Studio (database GUI)
 npm run db:studio
 ```
+> [!IMPORTANT]
+> `npm run db:generate` needs to be ran everytime you make a change to src/db/schema. The generated files should be comitted and pushed.
 
 ## Docker Deployment
 
