@@ -9,6 +9,8 @@ export default function useWindowSize() {
         setHeight(window.innerHeight);
     }
     useEffect(() => {
+        setHeight(window.innerHeight);
+        setWidth(window.innerWidth);
         window.addEventListener("resize", updateDimensions);
         return () => window.removeEventListener("resize", updateDimensions);
     }, []);
