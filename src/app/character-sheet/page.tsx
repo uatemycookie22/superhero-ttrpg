@@ -12,6 +12,6 @@ export default async function NewCharacterSheetPage({ params }: CharacterSheetPr
       <Link href="/" className="inline-block mb-4 text-violet-500 hover:text-violet-600 transition-colors">
         ← Back to Home
       </Link>
-    <CharacterSheet />
+    <CharacterSheet key={Date.now()} />
   </>)
 }
