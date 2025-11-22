@@ -36,7 +36,7 @@ export default function QuantityInput({ value, onChange, onDecrement, onIncremen
                 </svg>
             </button>
             <input 
-                className="rounded-none text-neutral-900 dark:text-white dark:bg-gray-800 w-12 text-center border-y border-gray-300 dark:border-gray-600 h-8" 
+                className="rounded-none text-neutral-900 dark:text-white dark:bg-gray-800 w-12 text-center border-y border-gray-300 dark:border-gray-600 h-8 px-0" 
                 value={value}
                 onChange={onChange}
                 {...rest} 
