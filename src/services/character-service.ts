@@ -4,6 +4,12 @@ import { characters, type Character, type NewCharacter } from '@/db/schema';
 import { eq, and, lt, sql, inArray } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { now, toDate, daysAgo } from '@/lib/temporal';
+import { z } from 'zod';
+
+const editableCharacterSchema = z.object({
+  name: z.string(),
+  attributes: z.any(),
+}).partial();
 
 /**
  * Create a new character
@@ -88,10 +94,12 @@ export async function updateCharacter(
   id: string,
   data: Partial<Pick<Character, 'name' | 'attributes'>>
 ): Promise<Character | null> {
+  const updateData = editableCharacterSchema.parse(data);
+  
   const [updated] = await db
     .update(characters)
     .set({
-      ...data,
+      ...updateData,
       updatedAt: toDate(now()),
     })
     .where(eq(characters.id, id))
