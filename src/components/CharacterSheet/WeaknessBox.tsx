@@ -35,7 +35,7 @@ export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: W
   }
 
   const selectedWeaknessesDetails = weaknesses
-      ?.filter((weakness) => selectedWeaknesses.find((selectedWeakness) => selectedWeakness.name === weakness.name));
+    ?.filter((weakness) => selectedWeaknesses.find((selectedWeakness) => selectedWeakness.name === weakness.name));
 
   return (
     <>
@@ -57,46 +57,7 @@ export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: W
 
       <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}>
         <h2 className="text-xl font-bold mb-4">Manage Weaknesses</h2>
-
-        <div className="mb-6">
-          <h3 className="font-semibold mb-2">Applied Weaknesses</h3>
-          <div className="space-y-2">
-            
-
-            {isPending ? (
-              <>
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="p-3 bg-bg-neutral-secondary rounded animate-pulse">
-                    <div className="h-4 bg-bg-neutral-tertiary rounded w-1/3 mb-2"></div>
-                    <div className="h-3 bg-bg-neutral-tertiary rounded w-2/3"></div>
-                  </div>
-                ))}
-              </>
-            ) : (
-              selectedWeaknessesDetails
-                ?.map(weakness => {
-                  return (
-                    <CollapsibleListItem
-                      key={weakness.name}
-                      title={weakness.name}
-                      description={weakness.description}
-                      actionButton={
-                        <button
-                          onClick={() => removeWeakness(weakness)}
-                          className="px-2 py-1 text-sm bg-error-primary hover:bg-error-secondary text-white rounded"
-                        >
-                          Remove
-                        </button>
-                      }
-                    />
-                  );
-                })
-            )}
-          </div>
-        </div>
-
         <div>
-          <h3 className="font-semibold mb-2">Add Weakness</h3>
           <input
             type="text"
             placeholder="Search weaknesses..."
@@ -128,13 +89,21 @@ export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: W
                       title={weakness.name}
                       description={weakness.description}
                       actionButton={
-                        <button
-                          onClick={() => addWeakness(weakness)}
-                          disabled={isAdded}
-                          className="px-3 py-1 text-sm bg-brand-primary hover:bg-brand-secondary text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                        isAdded ? (<button
+                          onClick={() => removeWeakness(weakness)}
+                          className="px-2 py-1 text-sm bg-error-primary hover:bg-error-secondary text-white rounded"
                         >
-                          Add
+                          Remove
                         </button>
+                        ) : (
+                          <button
+                            onClick={() => addWeakness(weakness)}
+                            disabled={isAdded}
+                            className="px-3 py-1 text-sm bg-brand-primary hover:bg-brand-secondary text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Add
+                          </button>
+                        )
                       }
                     />
                   );

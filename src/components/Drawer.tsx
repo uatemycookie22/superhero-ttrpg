@@ -11,9 +11,10 @@ interface DrawerProps {
 }
 
 export default function Drawer({ isOpen, onClose, children }: DrawerProps) {
-  const {width, height} = useWindowSize()
+  const { width, height } = useWindowSize()
+  const isSm = width > 640;
   return (
-    <VaulDrawer.Root open={isOpen} onOpenChange={(open) => !open && onClose()} direction={width < 640 ? "bottom" : "right"}>
+    <VaulDrawer.Root open={isOpen} onOpenChange={(open) => !open && onClose()} direction={isSm ? "right" : "bottom"}>
       <VaulDrawer.Portal>
         <VaulDrawer.Overlay className="fixed inset-0 bg-black/40" />
         <VaulDrawer.Content className={`
@@ -22,6 +23,9 @@ export default function Drawer({ isOpen, onClose, children }: DrawerProps) {
         `}>
           <VaulDrawer.Title className="sr-only">Drawer</VaulDrawer.Title>
           <div className="p-4 flex-1 overflow-y-auto">
+            {
+              !isSm && (<div aria-hidden className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-gray-300 mb-8" />)
+            }
             {children}
           </div>
         </VaulDrawer.Content>

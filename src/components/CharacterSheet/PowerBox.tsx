@@ -20,10 +20,10 @@ export default function PowerBox({ initialPowers, onPowersChange }: PowerBoxProp
   const [selectedPowers, setSelectedPowers] = useState<PowerRef[]>(initialPowers);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const { data: powers, isPending } = useQuery({ 
-    queryKey: ['powers'], 
-    queryFn: getAllPowers, 
-    enabled: isDrawerOpen 
+  const { data: powers, isPending } = useQuery({
+    queryKey: ['powers'],
+    queryFn: getAllPowers,
+    enabled: isDrawerOpen
   });
 
   function addPower(power: Power) {
@@ -63,44 +63,7 @@ export default function PowerBox({ initialPowers, onPowersChange }: PowerBoxProp
 
       <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)}>
         <h2 className="text-xl font-bold mb-4">Manage Powers</h2>
-
-        <div className="mb-6">
-          <h3 className="font-semibold mb-2">Applied Powers</h3>
-          <div className="space-y-2">
-            {isPending ? (
-              <>
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="p-3 bg-bg-neutral-secondary rounded animate-pulse">
-                    <div className="h-4 bg-bg-neutral-tertiary rounded w-1/3 mb-2"></div>
-                    <div className="h-3 bg-bg-neutral-tertiary rounded w-2/3"></div>
-                  </div>
-                ))}
-              </>
-            ) : (
-              selectedPowersDetails
-                ?.map(power => {
-                  return (
-                    <CollapsibleListItem
-                      key={power.id}
-                      title={power.name}
-                      description={power.description}
-                      actionButton={
-                        <button
-                          onClick={() => removePower({ id: power.id, name: power.name })}
-                          className="px-2 py-1 text-sm bg-error-primary hover:bg-error-secondary text-white rounded"
-                        >
-                          Remove
-                        </button>
-                      }
-                    />
-                  );
-                })
-            )}
-          </div>
-        </div>
-
         <div>
-          <h3 className="font-semibold mb-2">Add Power</h3>
           <input
             type="text"
             placeholder="Search powers..."
@@ -132,13 +95,24 @@ export default function PowerBox({ initialPowers, onPowersChange }: PowerBoxProp
                       title={power.name}
                       description={power.description}
                       actionButton={
-                        <button
-                          onClick={() => addPower(power)}
-                          disabled={isAdded}
-                          className="px-3 py-1 text-sm bg-brand-primary hover:bg-brand-secondary text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Add
-                        </button>
+                        isAdded ? (
+                          <button
+                            onClick={() => removePower({ id: power.id, name: power.name })}
+                            className="px-2 py-1 text-sm bg-error-primary hover:bg-error-secondary text-white rounded"
+                          >
+                            Remove
+                          </button>
+                        ) : (
+
+                          <button
+                            onClick={() => addPower(power)}
+                            disabled={isAdded}
+                            className="px-3 py-1 text-sm bg-brand-primary hover:bg-brand-secondary text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Add
+                          </button>
+
+                        )
                       }
                     />
                   );
