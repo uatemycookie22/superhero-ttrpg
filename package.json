@@ -44,6 +44,7 @@
     "tailwindcss": "^4.1.17",
     "typescript": "^5.7.2",
     "use-debounce": "^10.0.6",
+    "vaul": "^1.1.2",
     "zod": "^4.1.12"
   },
   "devDependencies": {

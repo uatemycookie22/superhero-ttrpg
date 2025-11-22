@@ -29,9 +29,10 @@ function SheetInput({ label, id, className, value, onChange, ...rest }: SheetInp
     </>)
 }
 
-const CamperStatInput = ({ id, label, isProficient, onProficiencyToggle, ...rest }: SheetInputProps & { 
+const CamperStatInput = ({ id, label, isProficient, onProficiencyToggle, disableProficiency, ...rest }: SheetInputProps & { 
   isProficient?: boolean; 
   onProficiencyToggle?: () => void;
+  disableProficiency?: boolean;
 }) => (<>
     <div className="flex flex-row gap-2 items-center justify-between">
         <div className="flex items-center gap-2 min-w-0">
@@ -39,8 +40,13 @@ const CamperStatInput = ({ id, label, isProficient, onProficiencyToggle, ...rest
                 <button
                     type="button"
                     onClick={onProficiencyToggle}
+                    disabled={disableProficiency}
                     className={`w-6 h-6 flex-shrink-0 rounded border-2 flex items-center justify-center ${
-                        isProficient ? 'bg-brand-primary border-brand-primary' : 'border-gray-400'
+                        isProficient 
+                            ? 'bg-brand-primary border-brand-primary' 
+                            : disableProficiency
+                                ? 'bg-gray-300 border-gray-300 opacity-50 cursor-not-allowed'
+                                : 'border-gray-400'
                     }`}
                     title="Toggle proficiency (+3 bonus)"
                 >
@@ -299,32 +305,38 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                     value={character.attributes?.charm as number || 0} 
                     onChange={(e) => handleAttributeChange('charm', Number(e.target.value))}
                     isProficient={proficiencies.includes('charm')}
-                    onProficiencyToggle={() => toggleProficiency('charm')} />
+                    onProficiencyToggle={() => toggleProficiency('charm')}
+                    disableProficiency={!proficiencies.includes('charm') && proficiencies.length >= 2} />
                 <CamperStatInput id="agility" label="Agility" name="Agility" type="number" min={0} max={10}
                     value={character.attributes?.agility as number || 0} 
                     onChange={(e) => handleAttributeChange('agility', Number(e.target.value))}
                     isProficient={proficiencies.includes('agility')}
-                    onProficiencyToggle={() => toggleProficiency('agility')} />
+                    onProficiencyToggle={() => toggleProficiency('agility')}
+                    disableProficiency={!proficiencies.includes('agility') && proficiencies.length >= 2} />
                 <CamperStatInput id="might" label="Might" name="Might" type="number" min={0} max={10}
                     value={character.attributes?.might as number || 0} 
                     onChange={(e) => handleAttributeChange('might', Number(e.target.value))}
                     isProficient={proficiencies.includes('might')}
-                    onProficiencyToggle={() => toggleProficiency('might')} />
+                    onProficiencyToggle={() => toggleProficiency('might')}
+                    disableProficiency={!proficiencies.includes('might') && proficiencies.length >= 2} />
                 <CamperStatInput id="prowess" label="Prowess" name="Prowess" type="number" min={0} max={10}
                     value={character.attributes?.power as number || 0} 
                     onChange={(e) => handleAttributeChange('power', Number(e.target.value))}
                     isProficient={proficiencies.includes('power')}
-                    onProficiencyToggle={() => toggleProficiency('power')} />
+                    onProficiencyToggle={() => toggleProficiency('power')}
+                    disableProficiency={!proficiencies.includes('power') && proficiencies.length >= 2} />
                 <CamperStatInput id="endurance" label="Endurance" name="Endurance" type="number" min={0} max={10}
                     value={character.attributes?.endurance as number || 0} 
                     onChange={(e) => handleAttributeChange('endurance', Number(e.target.value))}
                     isProficient={proficiencies.includes('endurance')}
-                    onProficiencyToggle={() => toggleProficiency('endurance')} />
+                    onProficiencyToggle={() => toggleProficiency('endurance')}
+                    disableProficiency={!proficiencies.includes('endurance') && proficiencies.length >= 2} />
                 <CamperStatInput id="resolve" label="Resolve" name="Resolve" type="number" min={0} max={10}
                     value={character.attributes?.resolve as number || 0} 
                     onChange={(e) => handleAttributeChange('resolve', Number(e.target.value))}
                     isProficient={proficiencies.includes('resolve')}
-                    onProficiencyToggle={() => toggleProficiency('resolve')} />
+                    onProficiencyToggle={() => toggleProficiency('resolve')}
+                    disableProficiency={!proficiencies.includes('resolve') && proficiencies.length >= 2} />
             </div>
 
             <div id="stats-radar" className="border-2 p-4 col-span-3 sm:col-span-2">
