@@ -31,10 +31,10 @@ function SheetInput({ label, id, className, value, onChange, ...rest }: SheetInp
     </>)
 }
 
-const CamperStatInput = ({ id, label, isProficient, onProficiencyToggle, disableProficiency, value, onChange, ...rest }: SheetInputProps & { 
-  isProficient?: boolean; 
-  onProficiencyToggle?: () => void;
-  disableProficiency?: boolean;
+const CamperStatInput = ({ id, label, isProficient, onProficiencyToggle, disableProficiency, value, onChange, ...rest }: SheetInputProps & {
+    isProficient?: boolean;
+    onProficiencyToggle?: () => void;
+    disableProficiency?: boolean;
 }) => {
     const numValue = Number(value) || 0;
     const handleDecrement = () => {
@@ -56,13 +56,12 @@ const CamperStatInput = ({ id, label, isProficient, onProficiencyToggle, disable
                         type="button"
                         onClick={onProficiencyToggle}
                         disabled={disableProficiency}
-                        className={`w-6 h-6 flex-shrink-0 rounded border-2 flex items-center justify-center ${
-                            isProficient 
-                                ? 'bg-brand-primary border-brand-primary' 
-                                : disableProficiency
-                                    ? 'bg-gray-300 border-gray-300 opacity-50 cursor-not-allowed'
-                                    : 'border-gray-400'
-                        }`}
+                        className={`w-6 h-6 flex-shrink-0 rounded border-2 flex items-center justify-center ${isProficient
+                            ? 'bg-brand-primary border-brand-primary'
+                            : disableProficiency
+                                ? 'bg-gray-300 border-gray-300 opacity-50 cursor-not-allowed'
+                                : 'border-gray-400'
+                            }`}
                         title="Toggle proficiency (+3 bonus)"
                     >
                         {isProficient && <Star className="w-4 h-4 text-white" fill="currentColor" />}
@@ -73,7 +72,7 @@ const CamperStatInput = ({ id, label, isProficient, onProficiencyToggle, disable
                     <span className="hidden md:inline">{label}</span>
                 </label>
             </div>
-            <QuantityInput 
+            <QuantityInput
                 value={value}
                 onChange={onChange}
                 onDecrement={handleDecrement}
@@ -150,9 +149,23 @@ export default function CharacterSheet(props: CharacterSheetProps) {
         if (props.existingCharacter) {
             touchCharacter(props.existingCharacter.id)
         }
-        
+
         // Mark initial mount as complete
         setIsInitialMount(false)
+
+        return () => {
+            if (!props.existingCharacter) {
+                setCharacterId(undefined);
+                setCharacter({
+                    name: '',
+                    attributes: {
+                        proficiencies: [],
+                    },
+                });
+                setCharacterCreated(false);
+                setIsInitialMount(true);
+            }
+        }
     }, []); // Empty dependency array ensures this runs once after initial render
 
 
@@ -195,11 +208,11 @@ export default function CharacterSheet(props: CharacterSheetProps) {
     }, [character])
 
     const [debouncedCharacter] = useDebounce(character, 1000)
-    
+
     // Save to localStorage when characterId is set
     useEffect(() => {
         if (!characterId) return;
-        
+
         const saved = localStorage.getItem('savedCharacterIds');
         const ids = saved ? JSON.parse(saved) : [];
         if (!ids.includes(characterId)) {
@@ -207,11 +220,11 @@ export default function CharacterSheet(props: CharacterSheetProps) {
             localStorage.setItem('savedCharacterIds', JSON.stringify(ids));
         }
     }, [characterId]);
-    
+
     useEffect(() => {
         // Skip sync on initial mount
         if (isInitialMount) return;
-        
+
         async function syncCharacter() {
             if (!characterId) return;
 
@@ -248,13 +261,13 @@ export default function CharacterSheet(props: CharacterSheetProps) {
         handleChange('name', e.target.value)
     }
 
-    function handleAttributeChange(key: string, value: string | number | number[] | {} ) {
+    function handleAttributeChange(key: string, value: string | number | number[] | {}) {
         // Validate stat changes
         if (['charm', 'agility', 'might', 'power', 'endurance', 'resolve'].includes(key)) {
             const numValue = value as number;
             // Enforce max 10 per stat
             if (numValue > 10) return;
-            
+
             // Check if total would exceed 30
             const newTotal = calculateTotalPoints({
                 charm: key === 'charm' ? numValue : (character.attributes?.charm as number || 0),
@@ -264,10 +277,10 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                 endurance: key === 'endurance' ? numValue : (character.attributes?.endurance as number || 0),
                 resolve: key === 'resolve' ? numValue : (character.attributes?.resolve as number || 0),
             });
-            
+
             if (newTotal > 30) return;
         }
-        
+
         handleChange('attributes', { ...character.attributes, [key]: value })
     }
 
@@ -280,8 +293,8 @@ export default function CharacterSheet(props: CharacterSheetProps) {
     }
 
     return (<>
-         <div id="copy-link" className="mb-4">
-            { origin && characterId && (
+        <div id="copy-link" className="mb-4">
+            {origin && characterId && (
                 <p className="flex items-center gap-2 text-xs">
                     Save this link to revisit this character: {`${origin}/character-sheet/${characterId}`}
                     <button onClick={copyLink} className="px-1.5 py-0.5 text-xs bg-violet-600 text-white rounded hover:bg-violet-700 flex items-center gap-1">
@@ -303,21 +316,21 @@ export default function CharacterSheet(props: CharacterSheetProps) {
 
         <div id="character-sheet-grid" className="grid grid-cols-3 gap-y-4 gap-x-0 md:gap-x-4">
             <div id="hero-identity" className="border-2 p-4 max-w-48 col-span-2">
-                <SheetInput id="alter_ego" label="Alter ego" name="Alter ego" type="text" 
-                    value={character.attributes?.alterEgo as string || ''} 
+                <SheetInput id="alter_ego" label="Alter ego" name="Alter ego" type="text"
+                    value={character.attributes?.alterEgo as string || ''}
                     onChange={(e) => handleAttributeChange('alterEgo', e.target.value)} />
                 <SheetInput id="hero_name" label="Hero name" name="Hero name" type="text" onChange={handleNameChange} value={character.name} />
             </div>
 
             <div id="hero-level" className="border-2 p-2 sm:p-4 w-full col-start-3">
-                <LevelInput 
-                    id="level" 
-                    name="Level" 
-                    type="number" 
-                    min={0} 
+                <LevelInput
+                    id="level"
+                    name="Level"
+                    type="number"
+                    min={0}
                     max={20}
-                    value={character.attributes?.level as number || 0} 
-                    onChange={(e) => handleAttributeChange('level', Number(e.target.value))} 
+                    value={character.attributes?.level as number || 0}
+                    onChange={(e) => handleAttributeChange('level', Number(e.target.value))}
                 />
             </div>
 
@@ -330,37 +343,37 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                     </span>
                 </div>
                 <CamperStatInput id="charm" label="Charm" name="Charm" type="number" min={0} max={10}
-                    value={character.attributes?.charm as number || 0} 
+                    value={character.attributes?.charm as number || 0}
                     onChange={(e) => handleAttributeChange('charm', Number(e.target.value))}
                     isProficient={proficiencies.includes('charm')}
                     onProficiencyToggle={() => toggleProficiency('charm')}
                     disableProficiency={!proficiencies.includes('charm') && proficiencies.length >= 2} />
                 <CamperStatInput id="agility" label="Agility" name="Agility" type="number" min={0} max={10}
-                    value={character.attributes?.agility as number || 0} 
+                    value={character.attributes?.agility as number || 0}
                     onChange={(e) => handleAttributeChange('agility', Number(e.target.value))}
                     isProficient={proficiencies.includes('agility')}
                     onProficiencyToggle={() => toggleProficiency('agility')}
                     disableProficiency={!proficiencies.includes('agility') && proficiencies.length >= 2} />
                 <CamperStatInput id="might" label="Might" name="Might" type="number" min={0} max={10}
-                    value={character.attributes?.might as number || 0} 
+                    value={character.attributes?.might as number || 0}
                     onChange={(e) => handleAttributeChange('might', Number(e.target.value))}
                     isProficient={proficiencies.includes('might')}
                     onProficiencyToggle={() => toggleProficiency('might')}
                     disableProficiency={!proficiencies.includes('might') && proficiencies.length >= 2} />
                 <CamperStatInput id="prowess" label="Prowess" name="Prowess" type="number" min={0} max={10}
-                    value={character.attributes?.power as number || 0} 
+                    value={character.attributes?.power as number || 0}
                     onChange={(e) => handleAttributeChange('power', Number(e.target.value))}
                     isProficient={proficiencies.includes('power')}
                     onProficiencyToggle={() => toggleProficiency('power')}
                     disableProficiency={!proficiencies.includes('power') && proficiencies.length >= 2} />
                 <CamperStatInput id="endurance" label="Endurance" name="Endurance" type="number" min={0} max={10}
-                    value={character.attributes?.endurance as number || 0} 
+                    value={character.attributes?.endurance as number || 0}
                     onChange={(e) => handleAttributeChange('endurance', Number(e.target.value))}
                     isProficient={proficiencies.includes('endurance')}
                     onProficiencyToggle={() => toggleProficiency('endurance')}
                     disableProficiency={!proficiencies.includes('endurance') && proficiencies.length >= 2} />
                 <CamperStatInput id="resolve" label="Resolve" name="Resolve" type="number" min={0} max={10}
-                    value={character.attributes?.resolve as number || 0} 
+                    value={character.attributes?.resolve as number || 0}
                     onChange={(e) => handleAttributeChange('resolve', Number(e.target.value))}
                     isProficient={proficiencies.includes('resolve')}
                     onProficiencyToggle={() => toggleProficiency('resolve')}
@@ -381,7 +394,7 @@ export default function CharacterSheet(props: CharacterSheetProps) {
 
             <div id="hero-camper-prowess" className="grid border-2 p-0 gap-0 col-span-3 grid-cols-subgrid">
                 <ProwessBox>
-                    <WeaknessBox 
+                    <WeaknessBox
                         initialWeaknesses={(character.attributes?.weaknesses as any[]) || []}
                         onWeaknessesChange={(weaknesses) => handleAttributeChange('weaknesses', weaknesses)}
                     />
@@ -390,11 +403,11 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                 <ProwessBox>
                     <div className="w-full flex flex-col gap-4">
                         <h4>Reflex/Strike</h4>
-                        <IconLabelInput label={<User />} 
-                            value={character.attributes?.reflex as number || 0} 
+                        <IconLabelInput label={<User />}
+                            value={character.attributes?.reflex as number || 0}
                             onChange={(e) => handleAttributeChange('reflex', Number(e.target.value))} />
-                        <IconLabelInput label={<Hand />} 
-                            value={character.attributes?.strike as number || 0} 
+                        <IconLabelInput label={<Hand />}
+                            value={character.attributes?.strike as number || 0}
                             onChange={(e) => handleAttributeChange('strike', Number(e.target.value))} />
                     </div>
                 </ProwessBox>
@@ -404,10 +417,10 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                         <p>Fortune</p>
                         <div className="flex flex-wrap gap-2">
                             {Array.from({ length: 5 }).map((_, i) => (
-                                <input key={i} type="checkbox" className="w-6 h-6" 
-                                    checked={!!(character.attributes?.fortune as number[] || [])[i]} 
+                                <input key={i} type="checkbox" className="w-6 h-6"
+                                    checked={!!(character.attributes?.fortune as number[] || [])[i]}
                                     onChange={(e) => {
-                                        const fortune = [...(character.attributes?.fortune as number[] || [0,0,0,0,0])];
+                                        const fortune = [...(character.attributes?.fortune as number[] || [0, 0, 0, 0, 0])];
                                         fortune[i] = e.target.checked ? 1 : 0;
                                         handleAttributeChange('fortune', fortune);
                                     }} />
@@ -415,8 +428,8 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                         </div>
 
                         <p>Notes</p>
-                        <textarea name="notes" className="bg-gray-50 resize-y grow min-h-32 text-black rounded p-2 text-sm" placeholder="Session notes..." 
-                            value={character.attributes?.notes as string || ''} 
+                        <textarea name="notes" className="bg-gray-50 resize-y grow min-h-32 text-black rounded p-2 text-sm" placeholder="Session notes..."
+                            value={character.attributes?.notes as string || ''}
                             onChange={(e) => handleAttributeChange('notes', e.target.value)} />
                     </div>
                 </ProwessBox>
@@ -431,8 +444,8 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                 <ProwessBox>
                     <div className="w-full flex flex-col gap-2">
                         <p>Attacks</p>
-                        <textarea name="attacks" className="bg-gray-50 resize-y grow min-h-32 text-black rounded p-2 text-sm" placeholder="List attacks and damage..." 
-                            value={character.attributes?.attacks as string || ''} 
+                        <textarea name="attacks" className="bg-gray-50 resize-y grow min-h-32 text-black rounded p-2 text-sm" placeholder="List attacks and damage..."
+                            value={character.attributes?.attacks as string || ''}
                             onChange={(e) => handleAttributeChange('attacks', e.target.value)} />
                     </div>
                 </ProwessBox>
