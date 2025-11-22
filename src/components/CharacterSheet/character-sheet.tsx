@@ -10,6 +10,8 @@ import Drawer from "@/components/Drawer";
 import WeaknessBox from "./WeaknessBox";
 import PowerBox from "./PowerBox";
 import { calculateTotalPoints, getStatWithProficiency, characterStatsSchema } from "@/lib/character-validation";
+import QuantityInput from "@/components/QuantityInput";
+import LevelInput from "@/components/LevelInput";
 
 
 
@@ -29,41 +31,61 @@ function SheetInput({ label, id, className, value, onChange, ...rest }: SheetInp
     </>)
 }
 
-const CamperStatInput = ({ id, label, isProficient, onProficiencyToggle, disableProficiency, ...rest }: SheetInputProps & { 
+const CamperStatInput = ({ id, label, isProficient, onProficiencyToggle, disableProficiency, value, onChange, ...rest }: SheetInputProps & { 
   isProficient?: boolean; 
   onProficiencyToggle?: () => void;
   disableProficiency?: boolean;
-}) => (<>
-    <div className="flex flex-row gap-2 items-center justify-between">
-        <div className="flex items-center gap-2 min-w-0">
-            {onProficiencyToggle && (
-                <button
-                    type="button"
-                    onClick={onProficiencyToggle}
-                    disabled={disableProficiency}
-                    className={`w-6 h-6 flex-shrink-0 rounded border-2 flex items-center justify-center ${
-                        isProficient 
-                            ? 'bg-brand-primary border-brand-primary' 
-                            : disableProficiency
-                                ? 'bg-gray-300 border-gray-300 opacity-50 cursor-not-allowed'
-                                : 'border-gray-400'
-                    }`}
-                    title="Toggle proficiency (+3 bonus)"
-                >
-                    {isProficient && <Star className="w-4 h-4 text-white" fill="currentColor" />}
-                </button>
-            )}
-            <label htmlFor={id} className="truncate">
-                <span className="md:hidden">{label.charAt(0)}</span>
-                <span className="hidden md:inline">{label}</span>
-            </label>
+}) => {
+    const numValue = Number(value) || 0;
+    const handleDecrement = () => {
+        if (numValue > 0) {
+            onChange?.({ target: { value: String(numValue - 1) } } as any);
+        }
+    };
+    const handleIncrement = () => {
+        if (numValue < 10) {
+            onChange?.({ target: { value: String(numValue + 1) } } as any);
+        }
+    };
+
+    return (
+        <div className="flex flex-row gap-2 items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+                {onProficiencyToggle && (
+                    <button
+                        type="button"
+                        onClick={onProficiencyToggle}
+                        disabled={disableProficiency}
+                        className={`w-6 h-6 flex-shrink-0 rounded border-2 flex items-center justify-center ${
+                            isProficient 
+                                ? 'bg-brand-primary border-brand-primary' 
+                                : disableProficiency
+                                    ? 'bg-gray-300 border-gray-300 opacity-50 cursor-not-allowed'
+                                    : 'border-gray-400'
+                        }`}
+                        title="Toggle proficiency (+3 bonus)"
+                    >
+                        {isProficient && <Star className="w-4 h-4 text-white" fill="currentColor" />}
+                    </button>
+                )}
+                <label htmlFor={id} className="truncate">
+                    <span className="md:hidden">{label.charAt(0)}</span>
+                    <span className="hidden md:inline">{label}</span>
+                </label>
+            </div>
+            <QuantityInput 
+                value={value}
+                onChange={onChange}
+                onDecrement={handleDecrement}
+                onIncrement={handleIncrement}
+                {...rest}
+            />
         </div>
-        <input className="rounded text-neutral-900 max-w-16 flex-shrink-0" {...rest} />
-    </div>
-</>)
+    );
+}
 
 const ProwessBox = ({ children }: Pick<ComponentProps<'div'>, 'children'>) => (<>
-    <div className="border-2 p-2 sm:p-4 w-full min-h-60">
+    <div className="border-2 p-2 sm:p-4 w-full min-h-60 col-span-3 sm:col-span-1">
         {children}
     </div>
 </>)
@@ -279,7 +301,7 @@ export default function CharacterSheet(props: CharacterSheetProps) {
             )}
         </div>
 
-        <div id="character-sheet-grid" className="grid grid-cols-3 gap-4">
+        <div id="character-sheet-grid" className="grid grid-cols-3 gap-y-4 gap-x-0 md:gap-x-4">
             <div id="hero-identity" className="border-2 p-4 max-w-48 col-span-2">
                 <SheetInput id="alter_ego" label="Alter ego" name="Alter ego" type="text" 
                     value={character.attributes?.alterEgo as string || ''} 
@@ -288,9 +310,15 @@ export default function CharacterSheet(props: CharacterSheetProps) {
             </div>
 
             <div id="hero-level" className="border-2 p-2 sm:p-4 w-full col-start-3">
-                <CamperStatInput id="level" label="Level" name="Level" type="number" min={0} max={20}
+                <LevelInput 
+                    id="level" 
+                    name="Level" 
+                    type="number" 
+                    min={0} 
+                    max={20}
                     value={character.attributes?.level as number || 0} 
-                    onChange={(e) => handleAttributeChange('level', Number(e.target.value))} />
+                    onChange={(e) => handleAttributeChange('level', Number(e.target.value))} 
+                />
             </div>
 
 
