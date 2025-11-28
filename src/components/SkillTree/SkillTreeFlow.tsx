@@ -5,22 +5,6 @@ import '@xyflow/react/dist/style.css';
 import SkillNode from './SkillNode';
 import { Skill, SkillTree, SkillStatus } from '@/types/skills';
 
-// Force nodes to be visible and allow overflow for rings/borders
-const flowStyles = `
-  .react-flow,
-  .react-flow__viewport,
-  .react-flow__renderer,
-  .react-flow__node {
-    overflow: visible !important;
-  }
-  .react-flow__node {
-    visibility: visible !important;
-  }
-  .react-flow__node.selected > div {
-    box-shadow: none !important;
-  }
-`;
-
 interface SkillTreeFlowProps {
   tree: SkillTree;
   unlockedSkills: string[];
@@ -81,6 +65,7 @@ function buildGraph(tree: SkillTree, unlockedSkills: string[], selectedSkillId?:
       type: 'skill',
       position: { x: offsetX + index * NODE_WIDTH, y: depth * NODE_HEIGHT },
       data: { label: skill.name, status: getSkillStatus(skill, unlockedSkills), skillId: skill.id, icon: skill.icon, selected: skill.id === selectedSkillId },
+      measured: { width: 48, height: 48 },
     });
     
     skill.prerequisites.forEach(prereq => {
@@ -106,11 +91,9 @@ function Flow({ tree, unlockedSkills, selectedSkillId, onSkillSelect }: SkillTre
   }, [tree, unlockedSkills, onSkillSelect]);
 
   return (
-    <div className="flex justify-center w-full">
-      <style>{flowStyles}</style>
+    <div className="flex justify-center w-full [&_.react-flow]:overflow-visible [&_.react-flow__viewport]:overflow-visible [&_.react-flow__renderer]:overflow-visible [&_.react-flow__node]:overflow-visible [&_.react-flow__node.selected>div]:shadow-none">
       <div style={{ width, height }}>
         <ReactFlow
-          key={tree.id}
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
@@ -134,7 +117,7 @@ function Flow({ tree, unlockedSkills, selectedSkillId, onSkillSelect }: SkillTre
 
 export default function SkillTreeFlow(props: SkillTreeFlowProps) {
   return (
-    <ReactFlowProvider>
+    <ReactFlowProvider key={`${props.tree.id}-${props.unlockedSkills.join(',')}`}>
       <Flow {...props} />
     </ReactFlowProvider>
   );
