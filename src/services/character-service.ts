@@ -5,6 +5,9 @@ import { eq, and, lt, sql, inArray } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { now, toDate, daysAgo } from '@/lib/temporal';
 import { z } from 'zod';
+import { revalidatePath } from 'next/cache';
+import { unstable_noStore as noStore } from 'next/cache';
+import { characterStatsSchema, validateCharacterStats } from '@/lib/character-validation';
 
 const editableCharacterSchema = z.object({
   name: z.string(),
@@ -49,6 +52,7 @@ export async function listCharactersByCampaign(campaignId: string): Promise<Char
  * Get a single character by ID
  */
 export async function getCharacter(id: string): Promise<Character | null> {
+  noStore();
   const [character] = await db
     .select()
     .from(characters)
@@ -96,6 +100,16 @@ export async function updateCharacter(
 ): Promise<Character | null> {
   const updateData = editableCharacterSchema.parse(data);
   
+  // Validate stats if attributes are being updated
+  if (updateData.attributes) {
+    const validation = validateCharacterStats(updateData.attributes);
+    if (!validation.success) {
+      throw new Error(validation.error);
+    }
+  }
+  
+  console.log('SERVER: Updating character', id, 'with skills:', data.attributes?.skills);
+  
   const [updated] = await db
     .update(characters)
     .set({
@@ -104,6 +118,12 @@ export async function updateCharacter(
     })
     .where(eq(characters.id, id))
     .returning();
+  
+  console.log('SERVER: Update result skills:', updated?.attributes?.skills);
+  
+  if (updated) {
+    revalidatePath(`/character-sheet/${id}`);
+  }
   
   return updated || null;
 }

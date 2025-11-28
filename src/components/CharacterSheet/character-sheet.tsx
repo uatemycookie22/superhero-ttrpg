@@ -4,12 +4,14 @@ import { createCampaign, getCampaign } from "@/services/campaign-service";
 import { createCharacter, getCharacter, touchCharacter, updateCharacter } from "@/services/character-service";
 import { Skull, User, Hand, CloudLightning, ThumbsUp, Star, Check, Loader2 } from "lucide-react"
 import { ChangeEvent, ComponentProps, JSX, useEffect, useState } from "react"
-import { useDebounce } from 'use-debounce';
+import { useAsyncDebouncer } from '@tanstack/react-pacer'
+import { useMutation } from '@tanstack/react-query'
 import StatRadarChart from "@/components/StatRadarChart";
 import Drawer from "@/components/Drawer";
 import WeaknessBox from "./WeaknessBox";
 import PowerBox from "./PowerBox";
 import { calculateTotalPoints, getStatWithProficiency, characterStatsSchema } from "@/lib/character-validation";
+import Link from "next/link";
 import QuantityInput from "@/components/QuantityInput";
 import LevelInput from "@/components/LevelInput";
 
@@ -113,24 +115,46 @@ export default function CharacterSheet(props: CharacterSheetProps) {
         ...props.existingCharacter,
     })
     const [copied, setCopied] = useState(false)
-    const [isInitialMount, setIsInitialMount] = useState(true)
-    const [isSaving, setIsSaving] = useState(false)
-    const [justSaved, setJustSaved] = useState(false)
 
     const [origin, setOrigin] = useState('');
 
-    const proficiencies = (character.attributes?.proficiencies as ('charm' | 'agility' | 'might' | 'power' | 'endurance' | 'resolve')[]) || [];
+    const saveMutation = useMutation({
+        mutationFn: async (char: EditableCharacter) => {
+            if (!characterId) return null
+            
+            const currentCharacter = await getCharacter(characterId)
+            if (!currentCharacter) return null
+            
+            const rawProficiencies = (char.attributes?.proficiencies as string[]) || []
+            const proficiencies = rawProficiencies.map(p => p === 'power' ? 'prowess' : p)
+            
+            const mergedAttributes = {
+                ...char.attributes,
+                skills: currentCharacter.attributes?.skills,
+                proficiencies,
+                prowess: (char.attributes?.prowess ?? char.attributes?.power) as number || 0,
+            }
+            
+            return updateCharacter(characterId, { ...char, attributes: mergedAttributes })
+        },
+    })
+
+    const debouncedSave = useAsyncDebouncer(saveMutation.mutateAsync, {
+        wait: 1000,
+    })
+
+    const proficiencies = (character.attributes?.proficiencies as ('charm' | 'agility' | 'might' | 'prowess' | 'endurance' | 'resolve')[]) || [];
     const totalPoints = calculateTotalPoints({
         charm: character.attributes?.charm as number || 0,
         agility: character.attributes?.agility as number || 0,
         might: character.attributes?.might as number || 0,
-        power: character.attributes?.power as number || 0,
+        prowess: character.attributes?.prowess as number || 0,
         endurance: character.attributes?.endurance as number || 0,
         resolve: character.attributes?.resolve as number || 0,
     });
     const pointsRemaining = 30 - totalPoints;
 
-    function toggleProficiency(stat: 'charm' | 'agility' | 'might' | 'power' | 'endurance' | 'resolve') {
+    function toggleProficiency(stat: 'charm' | 'agility' | 'might' | 'prowess' | 'endurance' | 'resolve') {
         const current = proficiencies;
         const newProf = current.includes(stat)
             ? current.filter(s => s !== stat)
@@ -141,7 +165,6 @@ export default function CharacterSheet(props: CharacterSheetProps) {
     }
 
     useEffect(() => {
-        // This code runs only on the client side after the component mounts
         if (typeof window !== 'undefined') {
             setOrigin(window.location.origin);
         }
@@ -149,32 +172,16 @@ export default function CharacterSheet(props: CharacterSheetProps) {
         if (props.existingCharacter) {
             touchCharacter(props.existingCharacter.id)
         }
-
-        // Mark initial mount as complete
-        setIsInitialMount(false)
-
-        return () => {
-            if (!props.existingCharacter) {
-                setCharacterId(undefined);
-                setCharacter({
-                    name: '',
-                    attributes: {
-                        proficiencies: [],
-                    },
-                });
-                setCharacterCreated(false);
-                setIsInitialMount(true);
-            }
-        }
-    }, []); // Empty dependency array ensures this runs once after initial render
-
+    }, []);
 
     function handleChange(field: keyof EditableCharacter, value: EditableCharacter[typeof field]) {
         const updated = { ...character, [field]: value };
         setCharacter(updated);
         props.onCharacterChange?.(updated);
-        setIsSaving(true);
-        setJustSaved(false);
+        
+        if (characterId) {
+            debouncedSave.maybeExecute(updated);
+        }
     }
 
     // Create character on first input
@@ -207,8 +214,6 @@ export default function CharacterSheet(props: CharacterSheetProps) {
         }
     }, [character])
 
-    const [debouncedCharacter] = useDebounce(character, 1000)
-
     // Save to localStorage when characterId is set
     useEffect(() => {
         if (!characterId) return;
@@ -221,49 +226,13 @@ export default function CharacterSheet(props: CharacterSheetProps) {
         }
     }, [characterId]);
 
-    useEffect(() => {
-        // Skip sync on initial mount
-        if (isInitialMount) return;
-
-        async function syncCharacter() {
-            if (!characterId) return;
-
-            const currentCharacter = await getCharacter(characterId)
-            if (!currentCharacter) return;
-
-            // Validate stats before saving
-            const statsToValidate = {
-                charm: debouncedCharacter.attributes?.charm as number || 0,
-                agility: debouncedCharacter.attributes?.agility as number || 0,
-                might: debouncedCharacter.attributes?.might as number || 0,
-                power: debouncedCharacter.attributes?.power as number || 0,
-                endurance: debouncedCharacter.attributes?.endurance as number || 0,
-                resolve: debouncedCharacter.attributes?.resolve as number || 0,
-                proficiencies: debouncedCharacter.attributes?.proficiencies as string[],
-            };
-
-            const validation = characterStatsSchema.safeParse(statsToValidate);
-            if (!validation.success) {
-                console.error('Validation failed:', validation.error);
-                setIsSaving(false);
-                return;
-            }
-
-            await updateCharacter(characterId, debouncedCharacter)
-            setIsSaving(false);
-            setJustSaved(true);
-            setTimeout(() => setJustSaved(false), 2000);
-        }
-        syncCharacter()
-    }, [debouncedCharacter, characterId])
-
     function handleNameChange(e: ChangeEvent<HTMLInputElement>) {
         handleChange('name', e.target.value)
     }
 
     function handleAttributeChange(key: string, value: string | number | number[] | {}) {
         // Validate stat changes
-        if (['charm', 'agility', 'might', 'power', 'endurance', 'resolve'].includes(key)) {
+        if (['charm', 'agility', 'might', 'prowess', 'endurance', 'resolve'].includes(key)) {
             const numValue = value as number;
             // Enforce max 10 per stat
             if (numValue > 10) return;
@@ -273,7 +242,7 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                 charm: key === 'charm' ? numValue : (character.attributes?.charm as number || 0),
                 agility: key === 'agility' ? numValue : (character.attributes?.agility as number || 0),
                 might: key === 'might' ? numValue : (character.attributes?.might as number || 0),
-                power: key === 'power' ? numValue : (character.attributes?.power as number || 0),
+                prowess: key === 'prowess' ? numValue : (character.attributes?.prowess as number || 0),
                 endurance: key === 'endurance' ? numValue : (character.attributes?.endurance as number || 0),
                 resolve: key === 'resolve' ? numValue : (character.attributes?.resolve as number || 0),
             });
@@ -300,12 +269,12 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                     <button onClick={copyLink} className="px-1.5 py-0.5 text-xs bg-violet-600 text-white rounded hover:bg-violet-700 flex items-center gap-1">
                         {copied ? <Check className="w-3 h-3 text-green-400" /> : 'Copy'}
                     </button>
-                    {isSaving && (
+                    {saveMutation.isPending && (
                         <span className="text-gray-500 flex items-center gap-1 ml-2">
                             <Loader2 className="w-3 h-3 animate-spin" /> Saving...
                         </span>
                     )}
-                    {justSaved && (
+                    {saveMutation.isSuccess && !saveMutation.isPending && (
                         <span className="text-green-600 flex items-center gap-1 ml-2">
                             <Check className="w-3 h-3" /> Saved!
                         </span>
@@ -332,6 +301,14 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                     value={character.attributes?.level as number || 0}
                     onChange={(e) => handleAttributeChange('level', Number(e.target.value))}
                 />
+                {characterId && (
+                    <Link
+                        href={`/character-sheet/${characterId}/skills`}
+                        className="mt-2 block w-full px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded text-center"
+                    >
+                        Skills
+                    </Link>
+                )}
             </div>
 
 
@@ -361,11 +338,11 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                     onProficiencyToggle={() => toggleProficiency('might')}
                     disableProficiency={!proficiencies.includes('might') && proficiencies.length >= 2} />
                 <CamperStatInput id="prowess" label="Prowess" name="Prowess" type="number" min={0} max={10}
-                    value={character.attributes?.power as number || 0}
-                    onChange={(e) => handleAttributeChange('power', Number(e.target.value))}
-                    isProficient={proficiencies.includes('power')}
-                    onProficiencyToggle={() => toggleProficiency('power')}
-                    disableProficiency={!proficiencies.includes('power') && proficiencies.length >= 2} />
+                    value={character.attributes?.prowess as number || 0}
+                    onChange={(e) => handleAttributeChange('prowess', Number(e.target.value))}
+                    isProficient={proficiencies.includes('prowess')}
+                    onProficiencyToggle={() => toggleProficiency('prowess')}
+                    disableProficiency={!proficiencies.includes('prowess') && proficiencies.length >= 2} />
                 <CamperStatInput id="endurance" label="Endurance" name="Endurance" type="number" min={0} max={10}
                     value={character.attributes?.endurance as number || 0}
                     onChange={(e) => handleAttributeChange('endurance', Number(e.target.value))}
@@ -386,7 +363,7 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                     { stat: 'Charm', value: getStatWithProficiency('charm', (character.attributes?.charm as number) || 0, proficiencies) + 1, max: 13 },
                     { stat: 'Agility', value: getStatWithProficiency('agility', (character.attributes?.agility as number) || 0, proficiencies) + 1, max: 13 },
                     { stat: 'Might', value: getStatWithProficiency('might', (character.attributes?.might as number) || 0, proficiencies) + 1, max: 13 },
-                    { stat: 'Prowess', value: getStatWithProficiency('power', (character.attributes?.power as number) || 0, proficiencies) + 1, max: 13 },
+                    { stat: 'Prowess', value: getStatWithProficiency('prowess', (character.attributes?.prowess as number) || 0, proficiencies) + 1, max: 13 },
                     { stat: 'Endurance', value: getStatWithProficiency('endurance', (character.attributes?.endurance as number) || 0, proficiencies) + 1, max: 13 },
                     { stat: 'Resolve', value: getStatWithProficiency('resolve', (character.attributes?.resolve as number) || 0, proficiencies) + 1, max: 13 },
                 ]} />
@@ -436,8 +413,7 @@ export default function CharacterSheet(props: CharacterSheetProps) {
 
                 <ProwessBox>
                     <PowerBox
-                        initialPowers={character.attributes?.powers as any[] || []}
-                        onPowersChange={(powers) => handleAttributeChange('powers', powers)}
+                        unlockedSkills={(character.attributes?.skills as Record<string, string[]>) || {}}
                     />
                 </ProwessBox>
 

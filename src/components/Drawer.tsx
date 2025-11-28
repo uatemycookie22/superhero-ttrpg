@@ -22,11 +22,13 @@ export default function Drawer({ isOpen, onClose, children }: DrawerProps) {
           sm:right-2 sm:top-2 sm:bottom-2 sm:z-10 sm:w-[310px] sm:mt-0 sm:flex-row sm:left-auto sm:h-full
         `}>
           <VaulDrawer.Title className="sr-only">Drawer</VaulDrawer.Title>
-          <div className="p-4 flex-1 overflow-y-auto">
+          <div className="p-4 flex flex-col h-full w-full">
             {
               !isSm && (<div aria-hidden className="mx-auto w-12 h-1.5 shrink-0 rounded-full bg-gray-300 mb-8" />)
             }
-            {children}
+            <div className="flex-1 overflow-y-auto">
+              {children}
+            </div>
           </div>
         </VaulDrawer.Content>
       </VaulDrawer.Portal>
