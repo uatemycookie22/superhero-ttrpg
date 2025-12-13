@@ -94,20 +94,23 @@ jobs:
             
             echo "🔐 Logging in to ECR..."
             aws ecr get-login-password --region us-east-1 | \
-              docker login --username AWS --password-stdin \
+              podman login --username AWS --password-stdin \
               814155132173.dkr.ecr.us-east-1.amazonaws.com
             
             echo "📥 Pulling latest image from ECR..."
-            docker compose -f docker-compose.prod.yml pull
+            podman-compose -f docker-compose.prod.yml pull
+            
+            echo "🔧 Fixing volume permissions..."
+            podman unshare chown -R 1001:1001 /data/sqlite/app-data
             
             echo "🔄 Restarting containers (migrations run on startup)..."
-            docker compose -f docker-compose.prod.yml up -d --force-recreate
+            podman-compose -f docker-compose.prod.yml up -d --force-recreate
             
             echo "🧹 Cleaning up old images..."
-            docker image prune -a -f || true
+            podman image prune -a -f || true
             
             echo "✅ Deployment complete!"
-            docker compose ps
+            podman-compose ps
           ENDSSH
 
 
