@@ -34,7 +34,7 @@ async function AuthenticatedContent() {
     <div>
       <div className="mb-6">
         <p className="text-gray-600 dark:text-gray-400">
-          Welcome, <strong>{session.user.username}</strong>
+          Welcome, <strong>{session.user.name}</strong>
         </p>
       </div>
 
