@@ -4,6 +4,7 @@ import { passkey } from "@better-auth/passkey";
 import { magicLink } from "better-auth/plugins";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { sendMagicLinkEmail } from "@/lib/email";
 
 export const auth = betterAuth({
