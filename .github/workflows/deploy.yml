@@ -73,6 +73,8 @@ jobs:
           AWS_REGION=us-east-1
           GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}
           GOOGLE_SERVICE_ACCOUNT_KEY=${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+          BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL=https://callingallheroes.net
           EOF
 
       - name: Deploy to Instance
