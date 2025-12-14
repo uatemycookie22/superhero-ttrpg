@@ -22,6 +22,13 @@
       "when": 1763709938136,
       "tag": "0002_short_vulture",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1765687449956,
+      "tag": "0003_public_hydra",
+      "breakpoints": true
     }
   ]
 }
