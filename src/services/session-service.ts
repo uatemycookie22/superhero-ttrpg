@@ -1,6 +1,6 @@
 'use server'
 import { db } from '@/db/client';
-import { sessions, type Session, type NewSession } from '@/db/schema';
+import { gameSessions, type GameSession, type NewGameSession } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { now, toDate } from '@/lib/temporal';
@@ -10,12 +10,12 @@ import { now, toDate } from '@/lib/temporal';
  */
 export async function createSession(data: {
   campaignId: string;
-  state?: Session['state'];
-}): Promise<Session> {
+  state?: GameSession['state'];
+}): Promise<GameSession> {
   const id = nanoid();
   
   const [session] = await db
-    .insert(sessions)
+    .insert(gameSessions)
     .values({
       id,
       ...data,
@@ -29,11 +29,11 @@ export async function createSession(data: {
 /**
  * Get active session for a campaign
  */
-export async function getActiveSession(campaignId: string): Promise<Session | null> {
+export async function getActiveSession(campaignId: string): Promise<GameSession | null> {
   const [session] = await db
     .select()
-    .from(sessions)
-    .where(and(eq(sessions.campaignId, campaignId), eq(sessions.isActive, true)))
+    .from(gameSessions)
+    .where(and(eq(gameSessions.campaignId, campaignId), eq(gameSessions.isActive, true)))
     .limit(1);
   
   return session || null;
@@ -42,11 +42,11 @@ export async function getActiveSession(campaignId: string): Promise<Session | nu
 /**
  * Get a session by ID
  */
-export async function getSession(id: string): Promise<Session | null> {
+export async function getSession(id: string): Promise<GameSession | null> {
   const [session] = await db
     .select()
-    .from(sessions)
-    .where(eq(sessions.id, id))
+    .from(gameSessions)
+    .where(eq(gameSessions.id, id))
     .limit(1);
   
   return session || null;
@@ -57,12 +57,12 @@ export async function getSession(id: string): Promise<Session | null> {
  */
 export async function updateSessionState(
   id: string,
-  state: Session['state']
-): Promise<Session | null> {
+  state: GameSession['state']
+): Promise<GameSession | null> {
   const [updated] = await db
-    .update(sessions)
+    .update(gameSessions)
     .set({ state })
-    .where(eq(sessions.id, id))
+    .where(eq(gameSessions.id, id))
     .returning();
   
   return updated || null;
@@ -71,14 +71,14 @@ export async function updateSessionState(
 /**
  * End a session
  */
-export async function endSession(id: string): Promise<Session | null> {
+export async function endSession(id: string): Promise<GameSession | null> {
   const [updated] = await db
-    .update(sessions)
+    .update(gameSessions)
     .set({
       isActive: false,
       endedAt: toDate(now()),
     })
-    .where(eq(sessions.id, id))
+    .where(eq(gameSessions.id, id))
     .returning();
   
   return updated || null;
@@ -87,10 +87,10 @@ export async function endSession(id: string): Promise<Session | null> {
 /**
  * Get all sessions for a campaign (active and inactive)
  */
-export async function listSessionsByCampaign(campaignId: string): Promise<Session[]> {
+export async function listSessionsByCampaign(campaignId: string): Promise<GameSession[]> {
   return db
     .select()
-    .from(sessions)
-    .where(eq(sessions.campaignId, campaignId))
+    .from(gameSessions)
+    .where(eq(gameSessions.campaignId, campaignId))
     .all();
 }
