@@ -24,6 +24,7 @@ export default function RegisterPage() {
       const signUpResult = await authClient.signUp.email({
         email,
         name: username,
+        username: username,
         password: crypto.randomUUID(),
       });
 

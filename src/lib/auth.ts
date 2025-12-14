@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { passkey } from "@better-auth/passkey";
-import { magicLink } from "better-auth/plugins";
+import { magicLink, username } from "better-auth/plugins";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -17,6 +17,7 @@ export const auth = betterAuth({
     requireEmailVerification: false,
   },
   plugins: [
+    username(),
     passkey({
       rpID: process.env.NODE_ENV === "production" 
         ? "callingallheroes.net" 
@@ -36,14 +37,6 @@ export const auth = betterAuth({
     cookieCache: {
       enabled: true,
       maxAge: 60 * 60, // 1 hour cache before DB check
-    },
-  },
-  user: {
-    additionalFields: {
-      username: {
-        type: "string",
-        required: false,
-      },
     },
   },
 });

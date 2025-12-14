@@ -21,6 +21,7 @@ export const user = sqliteTable("user", {
     .$onUpdate(() => new Date())
     .notNull(),
   username: text("username").notNull().unique().default(''),
+  displayUsername: text("display_username"),
 });
 
 export const session = sqliteTable(
