@@ -11,9 +11,10 @@ import { useQuery } from '@tanstack/react-query';
 interface WeaknessBoxProps {
   initialWeaknesses: Weakness[];
   onWeaknessesChange: (weaknesses: Weakness[]) => void;
+  disabled?: boolean;
 }
 
-export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: WeaknessBoxProps) {
+export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange, disabled }: WeaknessBoxProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedWeaknesses, setSelectedWeaknesses] = useState<Weakness[]>(initialWeaknesses);
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,6 +22,7 @@ export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: W
   const { data: weaknesses, isPending } = useQuery({ queryKey: ['weaknesses'], queryFn: getAllWeaknesses, enabled: isDrawerOpen })
 
   function addWeakness(weakness: Weakness) {
+    if (disabled) return;
     if (!selectedWeaknesses.find(w => w.name === weakness.name)) {
       const updated = [...selectedWeaknesses, weakness];
       setSelectedWeaknesses(updated);
@@ -29,6 +31,7 @@ export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: W
   }
 
   function removeWeakness(weakness: Weakness) {
+    if (disabled) return;
     const updated = selectedWeaknesses.filter(w => w.name !== weakness.name);
     setSelectedWeaknesses(updated);
     onWeaknessesChange(updated);
@@ -46,6 +49,7 @@ export default function WeaknessBox({ initialWeaknesses, onWeaknessesChange }: W
         </div>
         <button
           onClick={() => setIsDrawerOpen(true)}
+          disabled={disabled}
           className="px-4 py-2 bg-brand-primary hover:bg-brand-secondary text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Manage Weaknesses

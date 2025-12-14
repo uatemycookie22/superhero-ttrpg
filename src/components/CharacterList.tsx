@@ -13,7 +13,9 @@ export default function CharacterList() {
       if (!saved) return [];
       const ids = JSON.parse(saved) as string[];
       const chars = await getCharacters(ids);
-      return chars.sort((a, b) => {
+      // Filter out owned characters (only show 'tmp' or null)
+      const unownedChars = chars.filter(c => !c.createdBy || c.createdBy === 'tmp');
+      return unownedChars.sort((a, b) => {
         const aTime = a.lastAccessedAt?.getTime() ?? 0;
         const bTime = b.lastAccessedAt?.getTime() ?? 0;
         return bTime - aTime;

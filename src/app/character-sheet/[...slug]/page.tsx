@@ -1,5 +1,6 @@
 import CharacterSheet from "@/components/CharacterSheet/character-sheet"
 import { getCharacter } from "@/services/character-service"
+import { getSession } from "@/lib/auth-server"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { fromDate } from "@/lib/temporal"
@@ -17,6 +18,11 @@ export default async function CharacterSheetPage({ params }: CharacterSheetProps
     notFound()
   }
 
+  const session = await getSession();
+  const isOwned = character.createdBy && character.createdBy !== 'tmp';
+  const isOwner = session?.user.id === character.createdBy;
+  const canEdit = !isOwned || isOwner;
+
   const lastAccessed = character.lastAccessedAt 
     ? fromDate(character.lastAccessedAt).toLocaleString('en-US', {
         dateStyle: 'medium',
@@ -31,6 +37,11 @@ export default async function CharacterSheetPage({ params }: CharacterSheetProps
       <p className="text-xs text-gray-500 mb-2">
         Last accessed: {lastAccessed}
       </p>
-    <CharacterSheet existingCharacter={character} />
+      {isOwned && !isOwner && (
+        <div className="mb-4 p-3 rounded bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 text-sm">
+          Viewing character
+        </div>
+      )}
+    <CharacterSheet existingCharacter={character} isOwner={canEdit} />
   </>)
 }

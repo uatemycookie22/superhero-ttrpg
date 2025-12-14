@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { unstable_noStore as noStore } from 'next/cache';
 import { characterStatsSchema, validateCharacterStats } from '@/lib/character-validation';
+import { getSession } from '@/lib/auth-server';
 
 const editableCharacterSchema = z.object({
   name: z.string(),
@@ -21,8 +22,9 @@ export async function createCharacter(data: {
   campaignId: string;
   name: string;
   attributes?: Character['attributes'];
-  createdBy: string;
 }): Promise<Character> {
+  const session = await getSession();
+  
   const id = nanoid();
   
   const [character] = await db
@@ -30,6 +32,7 @@ export async function createCharacter(data: {
     .values({
       id,
       ...data,
+      createdBy: session?.user.id || 'tmp',
       lastAccessedAt: toDate(now()),
     })
     .returning();
@@ -98,6 +101,16 @@ export async function updateCharacter(
   id: string,
   data: Partial<Pick<Character, 'name' | 'attributes'>>
 ): Promise<Character | null> {
+  const session = await getSession();
+  const existing = await getCharacter(id);
+  
+  if (!existing) throw new Error("Character not found");
+  
+  // If character is owned (not 'tmp'), only owner can edit
+  if (existing.createdBy && existing.createdBy !== 'tmp' && (!session || existing.createdBy !== session.user.id)) {
+    throw new Error("Forbidden");
+  }
+  
   const updateData = editableCharacterSchema.parse(data);
   
   // Validate stats if attributes are being updated
@@ -142,6 +155,16 @@ export async function touchCharacter(id: string): Promise<void> {
  * Delete a character
  */
 export async function deleteCharacter(id: string): Promise<boolean> {
+  const session = await getSession();
+  const existing = await getCharacter(id);
+  
+  if (!existing) return false;
+  
+  // If character is owned (not 'tmp'), only owner can delete
+  if (existing.createdBy && existing.createdBy !== 'tmp' && (!session || existing.createdBy !== session.user.id)) {
+    throw new Error("Forbidden");
+  }
+  
   const result = await db
     .delete(characters)
     .where(eq(characters.id, id));
@@ -150,12 +173,15 @@ export async function deleteCharacter(id: string): Promise<boolean> {
 }
 
 /**
- * Delete characters not accessed in 30 days
+ * Delete characters not accessed in 30 days (only unowned characters)
  */
 export async function deleteStaleCharacters(): Promise<number> {
   const result = await db
     .delete(characters)
-    .where(lt(characters.lastAccessedAt, toDate(daysAgo(30))));
+    .where(and(
+      lt(characters.lastAccessedAt, toDate(daysAgo(30))),
+      eq(characters.createdBy, 'tmp')
+    ));
   
   return result.changes;
 }

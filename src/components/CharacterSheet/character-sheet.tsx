@@ -20,34 +20,33 @@ import LevelInput from "@/components/LevelInput";
 type EditableCharacter = Pick<Character, 'name' | 'attributes'>
 
 type SheetInputProps = Pick<ComponentProps<'label'>, 'htmlFor'> & ComponentProps<'input'> & { label: string }
-function SheetInput({ label, id, className, value, onChange, ...rest }: SheetInputProps) {
+function SheetInput({ label, id, className, value, onChange, disabled, ...rest }: SheetInputProps) {
     function handleChange(e: ChangeEvent<HTMLInputElement>) {
+        if (disabled) return;
         onChange?.(e)
     }
 
     return (<>
         <div className="flex flex-col">
             <label htmlFor={id} className="">{label}</label>
-            <input className="rounded text-neutral-900 w-full max-w-sm sm:max-w-40" {...rest} value={value} onChange={handleChange} />
+            <input className="rounded text-neutral-900 w-full max-w-sm sm:max-w-40 disabled:opacity-50 disabled:cursor-not-allowed" {...rest} value={value} onChange={handleChange} disabled={disabled} />
         </div>
     </>)
 }
 
-const CamperStatInput = ({ id, label, isProficient, onProficiencyToggle, disableProficiency, value, onChange, ...rest }: SheetInputProps & {
+const CamperStatInput = ({ id, label, isProficient, onProficiencyToggle, disableProficiency, value, onChange, disabled, ...rest }: SheetInputProps & {
     isProficient?: boolean;
     onProficiencyToggle?: () => void;
     disableProficiency?: boolean;
 }) => {
     const numValue = Number(value) || 0;
     const handleDecrement = () => {
-        if (numValue > 0) {
-            onChange?.({ target: { value: String(numValue - 1) } } as any);
-        }
+        if (disabled || numValue <= 0) return;
+        onChange?.({ target: { value: String(numValue - 1) } } as any);
     };
     const handleIncrement = () => {
-        if (numValue < 10) {
-            onChange?.({ target: { value: String(numValue + 1) } } as any);
-        }
+        if (disabled || numValue >= 10) return;
+        onChange?.({ target: { value: String(numValue + 1) } } as any);
     };
 
     return (
@@ -57,10 +56,10 @@ const CamperStatInput = ({ id, label, isProficient, onProficiencyToggle, disable
                     <button
                         type="button"
                         onClick={onProficiencyToggle}
-                        disabled={disableProficiency}
+                        disabled={disableProficiency || disabled}
                         className={`w-6 h-6 flex-shrink-0 rounded border-2 flex items-center justify-center ${isProficient
                             ? 'bg-brand-primary border-brand-primary'
-                            : disableProficiency
+                            : (disableProficiency || disabled)
                                 ? 'bg-gray-300 border-gray-300 opacity-50 cursor-not-allowed'
                                 : 'border-gray-400'
                             }`}
@@ -79,6 +78,7 @@ const CamperStatInput = ({ id, label, isProficient, onProficiencyToggle, disable
                 onChange={onChange}
                 onDecrement={handleDecrement}
                 onIncrement={handleIncrement}
+                disabled={disabled}
                 {...rest}
             />
         </div>
@@ -103,8 +103,10 @@ type CharacterSheetProps = {
     onCharacterChange?: (character: EditableCharacter) => void,
     existingCharacter?: Character,
     lastAccessed?: string,
+    isOwner?: boolean,
 }
 export default function CharacterSheet(props: CharacterSheetProps) {
+    const isOwner = props.isOwner ?? true; // Default to true for new characters
     const [characterCreated, setCharacterCreated] = useState(!!props.existingCharacter)
     const [characterId, setCharacterId] = useState<string | undefined>(props.existingCharacter?.id)
     const [character, setCharacter] = useState<EditableCharacter>({
@@ -202,7 +204,6 @@ export default function CharacterSheet(props: CharacterSheetProps) {
             const newCharacter = await createCharacter({
                 ...character,
                 campaignId: tmpCampaign?.id,
-                createdBy: 'tmp',
             })
 
             setCharacterId(newCharacter.id)
@@ -287,8 +288,9 @@ export default function CharacterSheet(props: CharacterSheetProps) {
             <div id="hero-identity" className="border-2 p-4 max-w-48 col-span-2">
                 <SheetInput id="alter_ego" label="Alter ego" name="Alter ego" type="text"
                     value={character.attributes?.alterEgo as string || ''}
-                    onChange={(e) => handleAttributeChange('alterEgo', e.target.value)} />
-                <SheetInput id="hero_name" label="Hero name" name="Hero name" type="text" onChange={handleNameChange} value={character.name} />
+                    onChange={(e) => handleAttributeChange('alterEgo', e.target.value)}
+                    disabled={!isOwner} />
+                <SheetInput id="hero_name" label="Hero name" name="Hero name" type="text" onChange={handleNameChange} value={character.name} disabled={!isOwner} />
             </div>
 
             <div id="hero-level" className="border-2 p-2 sm:p-4 w-full col-start-3">
@@ -300,8 +302,9 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                     max={20}
                     value={character.attributes?.level as number || 0}
                     onChange={(e) => handleAttributeChange('level', Number(e.target.value))}
+                    disabled={!isOwner}
                 />
-                {characterId && (
+                {characterId && isOwner && (
                     <Link
                         href={`/character-sheet/${characterId}/skills`}
                         className="mt-2 block w-full px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded text-center"
@@ -324,37 +327,43 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                     onChange={(e) => handleAttributeChange('charm', Number(e.target.value))}
                     isProficient={proficiencies.includes('charm')}
                     onProficiencyToggle={() => toggleProficiency('charm')}
-                    disableProficiency={!proficiencies.includes('charm') && proficiencies.length >= 2} />
+                    disableProficiency={!proficiencies.includes('charm') && proficiencies.length >= 2}
+                    disabled={!isOwner} />
                 <CamperStatInput id="agility" label="Agility" name="Agility" type="number" min={0} max={10}
                     value={character.attributes?.agility as number || 0}
                     onChange={(e) => handleAttributeChange('agility', Number(e.target.value))}
                     isProficient={proficiencies.includes('agility')}
                     onProficiencyToggle={() => toggleProficiency('agility')}
-                    disableProficiency={!proficiencies.includes('agility') && proficiencies.length >= 2} />
+                    disableProficiency={!proficiencies.includes('agility') && proficiencies.length >= 2}
+                    disabled={!isOwner} />
                 <CamperStatInput id="might" label="Might" name="Might" type="number" min={0} max={10}
                     value={character.attributes?.might as number || 0}
                     onChange={(e) => handleAttributeChange('might', Number(e.target.value))}
                     isProficient={proficiencies.includes('might')}
                     onProficiencyToggle={() => toggleProficiency('might')}
-                    disableProficiency={!proficiencies.includes('might') && proficiencies.length >= 2} />
+                    disableProficiency={!proficiencies.includes('might') && proficiencies.length >= 2}
+                    disabled={!isOwner} />
                 <CamperStatInput id="prowess" label="Prowess" name="Prowess" type="number" min={0} max={10}
                     value={character.attributes?.prowess as number || 0}
                     onChange={(e) => handleAttributeChange('prowess', Number(e.target.value))}
                     isProficient={proficiencies.includes('prowess')}
                     onProficiencyToggle={() => toggleProficiency('prowess')}
-                    disableProficiency={!proficiencies.includes('prowess') && proficiencies.length >= 2} />
+                    disableProficiency={!proficiencies.includes('prowess') && proficiencies.length >= 2}
+                    disabled={!isOwner} />
                 <CamperStatInput id="endurance" label="Endurance" name="Endurance" type="number" min={0} max={10}
                     value={character.attributes?.endurance as number || 0}
                     onChange={(e) => handleAttributeChange('endurance', Number(e.target.value))}
                     isProficient={proficiencies.includes('endurance')}
                     onProficiencyToggle={() => toggleProficiency('endurance')}
-                    disableProficiency={!proficiencies.includes('endurance') && proficiencies.length >= 2} />
+                    disableProficiency={!proficiencies.includes('endurance') && proficiencies.length >= 2}
+                    disabled={!isOwner} />
                 <CamperStatInput id="resolve" label="Resolve" name="Resolve" type="number" min={0} max={10}
                     value={character.attributes?.resolve as number || 0}
                     onChange={(e) => handleAttributeChange('resolve', Number(e.target.value))}
                     isProficient={proficiencies.includes('resolve')}
                     onProficiencyToggle={() => toggleProficiency('resolve')}
-                    disableProficiency={!proficiencies.includes('resolve') && proficiencies.length >= 2} />
+                    disableProficiency={!proficiencies.includes('resolve') && proficiencies.length >= 2}
+                    disabled={!isOwner} />
             </div>
 
             <div id="stats-radar" className="border-2 p-4 col-span-3 sm:col-span-2">
@@ -374,6 +383,7 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                     <WeaknessBox
                         initialWeaknesses={(character.attributes?.weaknesses as any[]) || []}
                         onWeaknessesChange={(weaknesses) => handleAttributeChange('weaknesses', weaknesses)}
+                        disabled={!isOwner}
                     />
                 </ProwessBox>
 
@@ -382,10 +392,12 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                         <h4>Reflex/Strike</h4>
                         <IconLabelInput label={<User />}
                             value={character.attributes?.reflex as number || 0}
-                            onChange={(e) => handleAttributeChange('reflex', Number(e.target.value))} />
+                            onChange={(e) => handleAttributeChange('reflex', Number(e.target.value))}
+                            disabled={!isOwner} />
                         <IconLabelInput label={<Hand />}
                             value={character.attributes?.strike as number || 0}
-                            onChange={(e) => handleAttributeChange('strike', Number(e.target.value))} />
+                            onChange={(e) => handleAttributeChange('strike', Number(e.target.value))}
+                            disabled={!isOwner} />
                     </div>
                 </ProwessBox>
 
@@ -394,35 +406,39 @@ export default function CharacterSheet(props: CharacterSheetProps) {
                         <p>Fortune</p>
                         <div className="flex flex-wrap gap-2">
                             {Array.from({ length: 5 }).map((_, i) => (
-                                <input key={i} type="checkbox" className="w-6 h-6"
+                                <input key={i} type="checkbox" className="w-6 h-6 disabled:opacity-50 disabled:cursor-not-allowed"
                                     checked={!!(character.attributes?.fortune as number[] || [])[i]}
                                     onChange={(e) => {
                                         const fortune = [...(character.attributes?.fortune as number[] || [0, 0, 0, 0, 0])];
                                         fortune[i] = e.target.checked ? 1 : 0;
                                         handleAttributeChange('fortune', fortune);
-                                    }} />
+                                    }}
+                                    disabled={!isOwner} />
                             ))}
                         </div>
 
                         <p>Notes</p>
-                        <textarea name="notes" className="bg-gray-50 resize-y grow min-h-32 text-black rounded p-2 text-sm" placeholder="Session notes..."
+                        <textarea name="notes" className="bg-gray-50 resize-y grow min-h-32 text-black rounded p-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed" placeholder="Session notes..."
                             value={character.attributes?.notes as string || ''}
-                            onChange={(e) => handleAttributeChange('notes', e.target.value)} />
+                            onChange={(e) => handleAttributeChange('notes', e.target.value)}
+                            disabled={!isOwner} />
                     </div>
                 </ProwessBox>
 
                 <ProwessBox>
                     <PowerBox
                         unlockedSkills={(character.attributes?.skills as Record<string, string[]>) || {}}
+                        disabled={!isOwner}
                     />
                 </ProwessBox>
 
                 <ProwessBox>
                     <div className="w-full flex flex-col gap-2">
                         <p>Attacks</p>
-                        <textarea name="attacks" className="bg-gray-50 resize-y grow min-h-32 text-black rounded p-2 text-sm" placeholder="List attacks and damage..."
+                        <textarea name="attacks" className="bg-gray-50 resize-y grow min-h-32 text-black rounded p-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed" placeholder="List attacks and damage..."
                             value={character.attributes?.attacks as string || ''}
-                            onChange={(e) => handleAttributeChange('attacks', e.target.value)} />
+                            onChange={(e) => handleAttributeChange('attacks', e.target.value)}
+                            disabled={!isOwner} />
                     </div>
                 </ProwessBox>
 

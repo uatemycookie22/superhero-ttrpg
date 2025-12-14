@@ -6,6 +6,7 @@ type SkillRef = string | { id: string; name: string };
 
 interface PowerBoxProps {
   unlockedSkills: Record<string, SkillRef[]>;
+  disabled?: boolean;
 }
 
 export default function PowerBox({ unlockedSkills }: PowerBoxProps) {

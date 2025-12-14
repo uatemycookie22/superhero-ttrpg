@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Providers } from './providers';
 import { ThemeToggle } from '@/components/ThemeToggle/ThemeToggle';
+import { SignOutButton } from '@/components/SignOutButton';
 import '../../styles/input.css';
 
 export const metadata: Metadata = {
@@ -22,7 +23,10 @@ export default function RootLayout({
               <h1 className="text-2xl font-bold text-violet-600 dark:text-violet-400">
                 Calling All Heroes
               </h1>
-              <ThemeToggle />
+              <div className="flex items-center gap-4">
+                <SignOutButton />
+                <ThemeToggle />
+              </div>
             </nav>
           </header>
           <main className="container mx-auto px-4 py-8">{children}</main>
